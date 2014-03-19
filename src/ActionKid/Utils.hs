@@ -22,3 +22,6 @@ count x list = length $ filter (==x) list
 
 indices :: [a] -> [Int]
 indices arr = [0..(length arr - 1)]
+
+(//) :: Int -> Int -> Int
+a // b = floor $ (fromIntegral a) / (fromIntegral b)

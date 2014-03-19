@@ -1,5 +1,6 @@
 module ActionKid.Types where
 import Graphics.Gloss.Interface.IO.Game
+import ActionKid.Utils
 
 data Attributes = Attributes {
                     ax :: Float,
@@ -30,8 +31,8 @@ class MovieClip a where
     zindex :: a -> Int
     zindex mc = azindex . attrs $ mc
 
-    display :: a -> Picture
+    display :: (Int, Int) -> a -> Picture
     -- TODO change this from a fixed size to a statevar
-    display mc
-      | visible mc = translate (x mc - 250.0) (y mc - 250.0) $ scale (scaleX mc) (scaleY mc) $ render mc
+    display (w, h) mc
+      | visible mc = translate (x mc - (fromIntegral $ w // 2)) (y mc - (fromIntegral $ w // 2)) $ scale (scaleX mc) (scaleY mc) $ render mc
       | otherwise = blank

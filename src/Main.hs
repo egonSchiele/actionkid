@@ -14,7 +14,7 @@ instance MovieClip Tile where
 gameState = [Tile "adit" defaultAttrs, Tile "calvin" (defaultAttrs { azindex = 2, ax = 25, ay = 25 })]
 
 main :: IO ()
-main = play "test game" gameState on stepGame
+main = play "test game" (500, 500) gameState on stepGame
 
 stepGame _ state = return state
 on _ state = return state
