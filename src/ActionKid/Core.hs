@@ -9,6 +9,7 @@ import Text.Printf
 import Graphics.Gloss hiding (display)
 import Data.Monoid ((<>), mconcat)
 import Graphics.Gloss.Interface.IO.Game
+import Data.Ord
 
 --------------------------------------------------------------------------------
 
@@ -27,4 +28,4 @@ play title state keyHandler onEnterFrame = do
     onEnterFrame
 
 draw :: MovieClip a => [a] -> IO Picture
-draw state = return . mconcat $ map display state
+draw state = return . mconcat $ map display . sortBy (comparing zindex) $ state
