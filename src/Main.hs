@@ -17,4 +17,10 @@ main :: IO ()
 main = play "test game" (500, 500) gameState on stepGame
 
 stepGame _ state = return state
+
+moveLeft (Tile name attrs) = Tile name (attrs { ax = (ax attrs - 10) })
+moveRight (Tile name attrs) = Tile name (attrs { ax = (ax attrs + 10) })
+
+on (EventKey (SpecialKey KeyLeft) Down _ _) (x:xs) = return (moveLeft x:xs)
+on (EventKey (SpecialKey KeyRight) Down _ _) (x:xs) = return (moveRight x:xs)
 on _ state = return state

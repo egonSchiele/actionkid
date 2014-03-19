@@ -1,6 +1,9 @@
 module ActionKid.Types where
 import Graphics.Gloss.Interface.IO.Game
 import ActionKid.Utils
+import ActionKid.Globals
+import Data.StateVar
+import Control.Monad hiding (join)
 
 data Attributes = Attributes {
                     ax :: Float,
@@ -31,8 +34,13 @@ class MovieClip a where
     zindex :: a -> Int
     zindex mc = azindex . attrs $ mc
 
-    display :: (Int, Int) -> a -> Picture
+    display :: a -> IO Picture
     -- TODO change this from a fixed size to a statevar
-    display (w, h) mc
-      | visible mc = translate (x mc - (fromIntegral $ w // 2)) (y mc - (fromIntegral $ w // 2)) $ scale (scaleX mc) (scaleY mc) $ render mc
-      | otherwise = blank
+    display mc
+      | visible mc = do
+        w <- get boardWidth
+        h <- get boardHeight
+        return $ translate (x mc - (fromIntegral $ w // 2)) (y mc - (fromIntegral $ h // 2)) $
+                  scale (scaleX mc) (scaleY mc) $
+                    render mc
+      | otherwise = return blank
