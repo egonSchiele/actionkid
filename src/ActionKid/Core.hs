@@ -6,8 +6,11 @@ import Control.Monad
 import Data.List
 import Data.Maybe
 import Text.Printf
-import Graphics.Gloss
+import Graphics.Gloss hiding (display)
 import Data.Monoid ((<>), mconcat)
+import Graphics.Gloss.Interface.IO.Game
+
+--------------------------------------------------------------------------------
 
 data Tile = Tile {
               name :: String,
@@ -18,4 +21,21 @@ instance MovieClip Tile where
     attrs = tileAttrs
     render t = (color black $ box 100 100) <> (color white $ text (name t))
 
-type GameState = [Tile]
+--------------------------------------------------------------------------------
+
+play :: MovieClip a => String -> [a] -> (Event -> [a] -> IO [a]) -> (Float -> [a] -> IO [a]) -> IO ()
+play title state keyHandler onEnterFrame = do
+  playIO
+    (InWindow "ones" (500, 500) (1, 1))
+    white
+    30
+    state
+    -- this could be done through a pre-defined function too...
+    -- just need to make the gamestate be a global var that is always
+    -- a list of elements to display
+    draw
+    keyHandler
+    onEnterFrame
+
+draw :: MovieClip a => [a] -> IO Picture
+draw state = return . mconcat $ map display state

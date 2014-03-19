@@ -25,4 +25,5 @@ class MovieClip a where
     scaleY mc = ascaleY . attrs $ mc
 
     display :: a -> Picture
-    display mc = translate (x mc) (y mc) $ scale (scaleX mc) (scaleY mc) $ render mc
+    -- TODO change this from a fixed size to a statevar
+    display mc = translate (x mc - 250.0) (y mc - 250.0) $ scale (scaleX mc) (scaleY mc) $ render mc
