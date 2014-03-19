@@ -12,17 +12,6 @@ import Graphics.Gloss.Interface.IO.Game
 
 --------------------------------------------------------------------------------
 
-data Tile = Tile {
-              name :: String,
-              tileAttrs :: Attributes
-}
-
-instance MovieClip Tile where
-    attrs = tileAttrs
-    render t = (color black $ box 100 100) <> (color white $ text (name t))
-
---------------------------------------------------------------------------------
-
 play :: MovieClip a => String -> [a] -> (Event -> [a] -> IO [a]) -> (Float -> [a] -> IO [a]) -> IO ()
 play title state keyHandler onEnterFrame = do
   playIO

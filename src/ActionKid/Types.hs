@@ -5,10 +5,11 @@ data Attributes = Attributes {
                     ax :: Float,
                     ay :: Float,
                     ascaleX :: Float,
-                    ascaleY :: Float
+                    ascaleY :: Float,
+                    avisible :: Bool
 }
 
-defaultAttrs = Attributes 0.0 0.0 1.0 1.0
+defaultAttrs = Attributes 0.0 0.0 1.0 1.0 True
 
 class MovieClip a where
     attrs :: a -> Attributes
@@ -23,7 +24,10 @@ class MovieClip a where
     scaleX mc = ascaleX . attrs $ mc
     scaleY :: a -> Float
     scaleY mc = ascaleY . attrs $ mc
-
+    visible :: a -> Bool
+    visible mc = avisible . attrs $ mc
     display :: a -> Picture
     -- TODO change this from a fixed size to a statevar
-    display mc = translate (x mc - 250.0) (y mc - 250.0) $ scale (scaleX mc) (scaleY mc) $ render mc
+    display mc
+      | visible mc = translate (x mc - 250.0) (y mc - 250.0) $ scale (scaleX mc) (scaleY mc) $ render mc
+      | otherwise = blank
