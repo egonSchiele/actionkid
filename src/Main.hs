@@ -5,17 +5,18 @@ import ActionKid.Utils
 import Control.Lens
 import Graphics.Gloss
 
-data Jumping = NotJumping | Jumping Int | Falling Int
+data Jumping = NotJumping | Jumping Int | Falling Int deriving Eq
 
 data Tile = Tile {
               _tileColor :: Color,
               _tileAttrs :: Attributes,
-              _jumping :: Jumping
+              _jumping :: Jumping,
+              _moveX :: Float
 }
 
 setJump val (Jumping _) = Jumping val
 setJump val (Falling _) = Falling val
-stJump val x = x
+setJump val x = x
 
 makeLenses ''Tile
 
@@ -24,28 +25,43 @@ instance MovieClip Tile where
   setAttrs mc a = mc { _tileAttrs = a }
   render tile = (color (tile ^. tileColor) $ box 100 100)
 
-adit   = Tile blue defaultAttrs NotJumping
-calvin = Tile red defaultAttrs NotJumping
+data GameState = GameState {
+                  _player :: Tile,
+                  _gameAttrs :: Attributes
+}
 
-gameState = [adit, y .~ 50 $ calvin]
+instance MovieClip GameState where
+    getAttrs = _gameAttrs
+    setAttrs mc a = mc { _gameAttrs = a }
+    render gs = ActionKid.display . _player $ gs
 
+makeLenses ''GameState
+
+gameState = GameState (Tile blue defaultAttrs NotJumping 0.0) defaultAttrs
 main = run "test game" (500, 500) gameState on stepGame
 
--- moveTile tile = (x +~ (fromIntegral $ tile ^. moveX)) tile
-stepGame _ s@(t:ts) = case t ^. jumping of
-                      NotJumping -> return s
-                      Jumping 0 -> return ((jumping .~ (Falling 10) $ t):ts)
-                      Jumping i -> return ((jumping %~ (setJump (i-1)) $ y +~ 8 $ t):ts)
-                      Falling 0 -> return ((jumping .~ NotJumping $ t):ts)
-                      Falling i -> return ((jumping %~ (setJump (i-1)) $ y -~ 8 $ t):ts)
+stepGame _ gs = return . move . jump $ gs
 
-on (EventKey (SpecialKey KeyLeft) Down _ _) (t:ts) = return ((moveX .~ -10.0 $ t):ts)
-on (EventKey (SpecialKey KeyRight) Down _ _) (t:ts) = return ((moveX .~ 10.0 $ t):ts)
-on (EventKey (SpecialKey KeyLeft) Up _ _) s@(t:ts) = return $ if t ^. moveX == -10.0
-                                                                then ((moveX .~ 0.0 $ t):ts)
-                                                                else s
-on (EventKey (SpecialKey KeyRight) Up _ _) s@(t:ts) = return $ if t ^. moveX == 10.0
-                                                                 then ((moveX .~ 0.0 $ t):ts)
-                                                                 else s
-on (EventKey (SpecialKey KeyUp) Down _ _) (t:ts) = return ((jumping .~ (Jumping 10) $ t):ts)
+move gs = player.x +~ (gs ^. player.moveX) $ gs
+
+jump gs = case gs ^. player.jumping of
+            NotJumping -> gs
+            Jumping 0  -> player.jumping .~ (Falling 10) $ gs
+            Jumping i  -> player.jumping %~ (setJump (i-1)) $
+                          player.y +~ 8 $ gs
+            Falling 0  -> player.jumping .~ NotJumping $ gs
+            Falling i  -> player.jumping %~ (setJump (i-1)) $
+                          player.y -~ 8 $ gs
+
+on (EventKey (SpecialKey KeyLeft) Down _ _) gs = return $ player.moveX .~ -10.0 $ gs
+on (EventKey (SpecialKey KeyRight) Down _ _) gs = return $ player.moveX .~ 10.0 $ gs
+on (EventKey (SpecialKey KeyLeft) Up _ _) gs = return $ if gs ^. player.moveX == -10.0
+                                                          then player.moveX .~ 0.0 $ gs
+                                                          else gs
+on (EventKey (SpecialKey KeyRight) Up _ _) gs = return $ if gs ^. player.moveX == 10.0
+                                                           then player.moveX .~ 0.0 $ gs
+                                                           else gs
+on (EventKey (SpecialKey KeyUp) Down _ _) gs = return $ if gs ^. player.jumping == NotJumping
+                                                          then player.jumping .~ (Jumping 10) $ gs
+                                                          else gs
 on _ state = return state

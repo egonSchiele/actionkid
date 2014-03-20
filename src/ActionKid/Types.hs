@@ -5,6 +5,7 @@ import ActionKid.Globals
 import Data.StateVar
 import Control.Monad hiding (join)
 import Control.Lens
+import System.IO.Unsafe
 
 data Attributes = Attributes {
                     ax :: Float,
@@ -12,12 +13,10 @@ data Attributes = Attributes {
                     ascaleX :: Float,
                     ascaleY :: Float,
                     avisible :: Bool,
-                    azindex :: Int,
-                    amoveX :: Float,
-                    amoveY :: Float
+                    azindex :: Int
 }
 
-defaultAttrs = Attributes 0.0 0.0 1.0 1.0 True 1 0.0 0.0
+defaultAttrs = Attributes 0.0 0.0 1.0 1.0 True 1
 
 -- these should be lenses so we can get and set
 
@@ -44,18 +43,9 @@ class MovieClip a where
     zindex :: Lens a a Int Int
     zindex = lens (azindex . getAttrs) (\mc new -> setAttrs mc ((getAttrs mc) { azindex = new }))
 
-    moveX :: Lens a a Float Float
-    moveX = lens (amoveX . getAttrs) (\mc new -> setAttrs mc ((getAttrs mc) { amoveX = new }))
-
-    moveY :: Lens a a Float Float
-    moveY = lens (amoveY . getAttrs) (\mc new -> setAttrs mc ((getAttrs mc) { amoveY = new }))
-
-    display :: a -> IO Picture
+    display :: a -> Picture
     display mc
-      | mc ^. visible = do
-        w <- get boardWidth
-        h <- get boardHeight
-        return $ translate (mc ^. x - (fromIntegral $ w // 2)) (mc ^. y - (fromIntegral $ h // 2)) $
-                  scale (mc ^. scaleX) (mc ^. scaleY) $
-                    render mc
-      | otherwise = return blank
+      | mc ^. visible = translate (mc ^. x) (mc ^. y) $
+                        scale (mc ^. scaleX) (mc ^. scaleY) $
+                        render mc
+      | otherwise = blank

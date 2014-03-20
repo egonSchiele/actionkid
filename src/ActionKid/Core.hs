@@ -14,14 +14,11 @@ import ActionKid.Globals
 import Data.StateVar
 import Control.Lens
 --------------------------------------------------------------------------------
-onEnterFrame :: MovieClip a => (Float -> [a] -> IO [a]) -> Float -> [a] -> IO [a]
-onEnterFrame stepFunc num state = do
-    -- update x value from moveX
-    let newState = for state $ \mc -> x +~ (mc ^. moveX) $
-                                      y +~ (mc ^. moveY) $ mc
-    stepFunc num newState
 
-run :: MovieClip a => String -> (Int, Int) -> [a] -> (Event -> [a] -> IO [a]) -> (Float -> [a] -> IO [a]) -> IO ()
+onEnterFrame :: MovieClip a => (Float -> a -> IO a) -> Float -> a -> IO a
+onEnterFrame stepFunc num state = stepFunc num state
+
+run :: MovieClip a => String -> (Int, Int) -> a -> (Event -> a -> IO a) -> (Float -> a -> IO a) -> IO ()
 run title (w,h) state keyHandler stepFunc = do
   boardWidth $= w
   boardHeight $= h
@@ -37,5 +34,8 @@ run title (w,h) state keyHandler stepFunc = do
     keyHandler
     (onEnterFrame stepFunc)
 
-draw :: MovieClip a => [a] -> IO Picture
-draw state = liftM mconcat $ mapM display . sortBy (comparing $ azindex . getAttrs) $ state
+draw gs = do
+  w <- get boardWidth
+  h <- get boardHeight
+  return $ translate (-(fromIntegral $ w // 2)) (-(fromIntegral $ h // 2)) $
+           display gs
