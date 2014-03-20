@@ -14,10 +14,6 @@ data Tile = Tile {
               _moveX :: Float
 }
 
-setJump val (Jumping _) = Jumping val
-setJump val (Falling _) = Falling val
-setJump val x = x
-
 makeLenses ''Tile
 
 instance MovieClip Tile where
@@ -47,10 +43,10 @@ move gs = player.x +~ (gs ^. player.moveX) $ gs
 jump gs = case gs ^. player.jumping of
             NotJumping -> gs
             Jumping 0  -> player.jumping .~ (Falling 10) $ gs
-            Jumping i  -> player.jumping %~ (setJump (i-1)) $
+            Jumping i  -> player.jumping .~ (Jumping (i-1)) $
                           player.y +~ 8 $ gs
             Falling 0  -> player.jumping .~ NotJumping $ gs
-            Falling i  -> player.jumping %~ (setJump (i-1)) $
+            Falling i  -> player.jumping .~ (Falling (i-1)) $
                           player.y -~ 8 $ gs
 
 on (EventKey (SpecialKey KeyLeft) Down _ _) gs = return $ player.moveX .~ -10.0 $ gs
