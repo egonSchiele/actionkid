@@ -5,11 +5,8 @@ import ActionKid.Utils
 import Control.Lens
 import Graphics.Gloss
 
-data Direction = L | R deriving (Ord, Show, Eq)
-
 data Tile = Tile {
               _tileColor :: Color,
-              _direction :: Direction,
               _tileAttrs :: Attributes
 }
 
@@ -20,21 +17,19 @@ instance MovieClip Tile where
   setAttrs mc a = mc { _tileAttrs = a }
   render tile = (color (tile ^. tileColor) $ box 100 100)
 
-adit   = Tile blue L defaultAttrs
-calvin = Tile red L defaultAttrs
+adit   = Tile blue defaultAttrs
+calvin = Tile red defaultAttrs
 
 gameState = [adit, y .~ 50 $ calvin]
 
 main = run "test game" (500, 500) gameState on stepGame
 
-stepGame _ state = return $ map moveTile state
+-- moveTile tile = (x +~ (fromIntegral $ tile ^. moveX)) tile
+stepGame _ state = return state
 
-moveTile tile
-  | tile ^. direction == L && tile ^. x <= 0 = direction .~ R $ tile
-  | tile ^. direction == L = x -~ 10 $ tile
-  | tile ^. x >= 500       = direction .~ L $ tile
-  | otherwise              = x +~ 10 $ tile
-
-on (EventKey (SpecialKey KeyLeft) Down _ _) (t:ts) = return ((x -~ 10 $ t):ts)
-on (EventKey (SpecialKey KeyRight) Down _ _) (t:ts) = return ((x +~ 10 $ t):ts)
+on (EventKey (SpecialKey KeyLeft) Down _ _) (t:ts) = return ((moveX .~ -10.0 $ t):ts)
+on (EventKey (SpecialKey KeyRight) Down _ _) (t:ts) = return ((moveX .~ 10.0 $ t):ts)
+on (EventKey (SpecialKey KeyUp) Down _ _) (t:ts) = return ((moveY .~ 10.0 $ t):ts)
+on (EventKey (SpecialKey KeyDown) Down _ _) (t:ts) = return ((moveY .~ -10.0 $ t):ts)
+on (EventKey _ Up _ _) (t:ts) = return ((moveX .~ 0.0 $ moveY .~ 0.0 $ t):ts)
 on _ state = return state
