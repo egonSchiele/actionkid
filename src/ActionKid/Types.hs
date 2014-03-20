@@ -4,6 +4,7 @@ import ActionKid.Utils
 import ActionKid.Globals
 import Data.StateVar
 import Control.Monad hiding (join)
+import Control.Lens
 
 data Attributes = Attributes {
                     ax :: Float,
@@ -16,31 +17,37 @@ data Attributes = Attributes {
 
 defaultAttrs = Attributes 0.0 0.0 1.0 1.0 True 1
 
+-- these should be lenses so we can get and set
+
 class MovieClip a where
-    attrs :: a -> Attributes
+    getAttrs :: a -> Attributes
+    setAttrs :: a -> Attributes -> a
     render :: a -> Picture
 
-    -- these should be lenses so we can get and set
-    x :: a -> Float
-    x mc = ax . attrs $ mc
-    y :: a -> Float
-    y mc = ay . attrs $ mc
-    scaleX :: a -> Float
-    scaleX mc = ascaleX . attrs $ mc
-    scaleY :: a -> Float
-    scaleY mc = ascaleY . attrs $ mc
-    visible :: a -> Bool
-    visible mc = avisible . attrs $ mc
-    zindex :: a -> Int
-    zindex mc = azindex . attrs $ mc
+    x :: Lens a a Float Float
+    x = lens (ax . getAttrs) (\mc new -> setAttrs mc ((getAttrs mc) { ax = new }))
+
+    y :: Lens a a Float Float
+    y = lens (ay . getAttrs) (\mc new -> setAttrs mc ((getAttrs mc) { ay = new }))
+
+    scaleX :: Lens a a Float Float
+    scaleX = lens (ascaleX . getAttrs) (\mc new -> setAttrs mc ((getAttrs mc) { ascaleX = new }))
+
+    scaleY :: Lens a a Float Float
+    scaleY = lens (ascaleY . getAttrs) (\mc new -> setAttrs mc ((getAttrs mc) { ascaleY = new }))
+
+    visible :: Lens a a Bool Bool
+    visible = lens (avisible . getAttrs) (\mc new -> setAttrs mc ((getAttrs mc) { avisible = new }))
+
+    zindex :: Lens a a Int Int
+    zindex = lens (azindex . getAttrs) (\mc new -> setAttrs mc ((getAttrs mc) { azindex = new }))
 
     display :: a -> IO Picture
-    -- TODO change this from a fixed size to a statevar
     display mc
-      | visible mc = do
+      | mc ^. visible = do
         w <- get boardWidth
         h <- get boardHeight
-        return $ translate (x mc - (fromIntegral $ w // 2)) (y mc - (fromIntegral $ h // 2)) $
-                  scale (scaleX mc) (scaleY mc) $
+        return $ translate (mc ^. x - (fromIntegral $ w // 2)) (mc ^. y - (fromIntegral $ h // 2)) $
+                  scale (mc ^. scaleX) (mc ^. scaleY) $
                     render mc
       | otherwise = return blank

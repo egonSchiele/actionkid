@@ -1,26 +1,40 @@
+{-# LANGUAGE TemplateHaskell #-}
 import ActionKid
 import Data.Monoid ((<>), mconcat)
 import ActionKid.Utils
+import Control.Lens
+import Graphics.Gloss
+
+data Direction = L | R deriving (Ord, Show, Eq)
 
 data Tile = Tile {
-              name :: String,
-              tileAttrs :: Attributes
+              _tileColor :: Color,
+              _direction :: Direction,
+              _tileAttrs :: Attributes
 }
 
+makeLenses ''Tile
+
 instance MovieClip Tile where
-    attrs = tileAttrs
-    render t = (color black $ box 100 100) <> (scale 0.3 0.3 $ color white $ text (name t))
+  getAttrs = _tileAttrs
+  setAttrs mc a = mc { _tileAttrs = a }
+  render tile = (color (tile ^. tileColor) $ box 100 100)
 
-gameState = [Tile "adit" defaultAttrs, Tile "calvin" (defaultAttrs { azindex = 2, ax = 25, ay = 25 })]
+adit   = Tile blue L defaultAttrs
+calvin = Tile red L defaultAttrs
 
-main :: IO ()
-main = play "test game" (500, 500) gameState on stepGame
+gameState = [adit, y .~ 50 $ calvin]
 
-stepGame _ state = return state
+main = run "test game" (500, 500) gameState on stepGame
 
-moveLeft (Tile name attrs) = Tile name (attrs { ax = (ax attrs - 10) })
-moveRight (Tile name attrs) = Tile name (attrs { ax = (ax attrs + 10) })
+stepGame _ state = return $ map moveTile state
 
-on (EventKey (SpecialKey KeyLeft) Down _ _) (x:xs) = return (moveLeft x:xs)
-on (EventKey (SpecialKey KeyRight) Down _ _) (x:xs) = return (moveRight x:xs)
+moveTile tile
+  | tile ^. direction == L && tile ^. x <= 0 = direction .~ R $ tile
+  | tile ^. direction == L = x -~ 10 $ tile
+  | tile ^. x >= 500       = direction .~ L $ tile
+  | otherwise              = x +~ 10 $ tile
+
+on (EventKey (SpecialKey KeyLeft) Down _ _) (t:ts) = return ((x -~ 10 $ t):ts)
+on (EventKey (SpecialKey KeyRight) Down _ _) (t:ts) = return ((x +~ 10 $ t):ts)
 on _ state = return state

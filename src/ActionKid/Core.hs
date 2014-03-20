@@ -14,8 +14,8 @@ import ActionKid.Globals
 import Data.StateVar
 --------------------------------------------------------------------------------
 
-play :: MovieClip a => String -> (Int, Int) -> [a] -> (Event -> [a] -> IO [a]) -> (Float -> [a] -> IO [a]) -> IO ()
-play title (w,h) state keyHandler onEnterFrame = do
+run :: MovieClip a => String -> (Int, Int) -> [a] -> (Event -> [a] -> IO [a]) -> (Float -> [a] -> IO [a]) -> IO ()
+run title (w,h) state keyHandler onEnterFrame = do
   boardWidth $= w
   boardHeight $= h
   playIO
@@ -31,4 +31,4 @@ play title (w,h) state keyHandler onEnterFrame = do
     onEnterFrame
 
 draw :: MovieClip a => [a] -> IO Picture
-draw state = liftM mconcat $ mapM display . sortBy (comparing zindex) $ state
+draw state = liftM mconcat $ mapM display . sortBy (comparing $ azindex . getAttrs) $ state
