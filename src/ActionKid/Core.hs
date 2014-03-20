@@ -14,7 +14,6 @@ import ActionKid.Globals
 import Data.StateVar
 import Control.Lens
 --------------------------------------------------------------------------------
-
 onEnterFrame :: MovieClip a => (Float -> [a] -> IO [a]) -> Float -> [a] -> IO [a]
 onEnterFrame stepFunc num state = do
     -- update x value from moveX
