@@ -4,6 +4,7 @@ import Data.Monoid ((<>), mconcat)
 import ActionKid.Utils
 import Control.Lens
 import Graphics.Gloss
+import qualified Debug.Trace as D
 
 data Jumping = NotJumping | Jumping Int | Falling Int deriving Eq
 
@@ -23,23 +24,30 @@ instance MovieClip Tile where
 
 data GameState = GameState {
                   _player :: Tile,
+                  _enemy :: Tile,
                   _gameAttrs :: Attributes
 }
 
 instance MovieClip GameState where
     getAttrs = _gameAttrs
     setAttrs mc a = mc { _gameAttrs = a }
-    render gs = ActionKid.display . _player $ gs
+    render gs = (ActionKid.display . _player $ gs) <> (ActionKid.display . _enemy $ gs)
 
 makeLenses ''GameState
 
-gameState = GameState (Tile blue defaultAttrs NotJumping 0.0) defaultAttrs
+gameState = GameState p (x .~ 50 $ e) defaultAttrs
+  where p = Tile blue defaultAttrs NotJumping 0.0
+        e = Tile green defaultAttrs NotJumping 0.0
+
 main = run "test game" (500, 500) gameState on stepGame
 
-stepGame _ gs = return . move . jump $ gs
+stepGame _ gs = return . checkHit . move . jump $ gs
+
+checkHit gs = if (gs ^. player) `hits` (gs ^. enemy)
+                then player.tileColor .~ red  $ gs
+                else player.tileColor .~ blue $ gs
 
 move gs = player.x +~ (gs ^. player.moveX) $ gs
-
 jump gs = case gs ^. player.jumping of
             NotJumping -> gs
             Jumping 0  -> player.jumping .~ (Falling 10) $ gs
