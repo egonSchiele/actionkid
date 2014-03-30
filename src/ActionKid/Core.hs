@@ -24,9 +24,13 @@ hits a b = f a `intersects` f b
 -- | Call this to run your game. Takes:
 --
 -- 1. Window title
+--
 -- 2. (width, height)
+--
 -- 3. Game state (a MovieClip)
+--
 -- 4. a key handler function (exactly the same as Gloss)
+--
 -- 5. a step function (onEnterFrame)
 run :: MovieClip a => String -> (Int, Int) -> a -> (Event -> a -> IO a) -> (Float -> a -> IO a) -> IO ()
 run title (w,h) state keyHandler stepFunc = do
@@ -46,5 +50,6 @@ run title (w,h) state keyHandler stepFunc = do
 
 -- | Convenience function. Given a list of movie clips,
 -- displays all of them.
+-- TODO support zindex.
 displayAll :: MovieClip a => [a] -> Picture
 displayAll mcs = Pictures $ map display mcs

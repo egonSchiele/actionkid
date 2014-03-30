@@ -53,18 +53,19 @@ defaultAttrs = Attributes 0.0 0.0 1.0 1.0 True 1
 -- > newTile = x +~ 10 $ tile -- tile, moved to the right by 10
 --
 -- The coordinate system starts from the bottom left.
--- So the bottom-left is `(0,0)`.
+-- So the bottom-left is (0,0).
 class MovieClip a where
     -- | your data type needs to have a field for attributes.
     -- This is a lens for that field. You can build your own lens:
     --
     -- > data Tile = Tile { tileAttrs :: Attributes }
-    -- > attrs t = lens tileAttrs (\mc new -> mc { tileAttrs = new })
+    -- > attrs t = lens tileAttrs (\mc newAttrs -> mc { tileAttrs = newAttrs })
     --
     -- Basically, the `lens` function takes:
     --
-    -- 1. A function to *get* the attributes of your tile
-    -- 2. A function to *set* the attributes of your tile.
+    -- - A function to *get* the attributes of your tile
+    --
+    -- - A function to *set* the attributes of your tile.
     --
     -- It's even easier if you just let the lens library do everything:
     --
@@ -73,7 +74,7 @@ class MovieClip a where
     -- > attrs = tileAttrs
     attrs :: Lens a a Attributes Attributes
 
-    -- | This is how your aata type actually gets rendered.
+    -- | This is how your data type actually gets rendered.
     -- ActionKid will take care of positioning, scaling etc for you.
     -- All you need to define is how the type should be rendered.
     -- Example:
