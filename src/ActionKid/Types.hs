@@ -30,7 +30,7 @@ data Attributes = Attributes {
 makeLenses ''Attributes
 
 -- | default Attributes.
-defaultAttrs = Attributes 0.0 0.0 1.0 1.0 True 1
+def = Attributes 0.0 0.0 1.0 1.0 True 1
 
 -- | Make your data type an instance of this class.
 -- For example, suppose you have a data type like this:

@@ -25,3 +25,5 @@ indices arr = [0..(length arr - 1)]
 
 (//) :: Integral a => a -> a -> a
 a // b = floor $ (fromIntegral a) / (fromIntegral b)
+
+mapWithIndex func list = map func (zip list (indices list))
