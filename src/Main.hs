@@ -32,7 +32,7 @@ makeLenses ''GameState
 
 instance MovieClip GameState where
     attrs = gameAttrs
-    render gs = (ActionKid.display . _player $ gs) <> (ActionKid.display . _enemy $ gs)
+    render gs = displayAll [gs ^. player, gs ^. enemy]
 
 gameState = GameState p (x .~ 50 $ e) defaultAttrs
   where p = Tile defaultAttrs blue NotJumping 0.0

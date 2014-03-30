@@ -93,3 +93,8 @@ draw gs = do
   h <- get boardHeight
   return $ translate (-(fromIntegral $ w // 2)) (-(fromIntegral $ h // 2)) $
            display gs
+
+-- | Convenience function. Given a list of movie clips,
+-- displays all of them.
+displayAll :: MovieClip a => [a] -> Picture
+displayAll mcs = Pictures $ map display mcs
