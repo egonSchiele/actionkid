@@ -1,4 +1,5 @@
-- add attrs automatically using templatehaskell?
+- documentation
+- add attrs automatically using templatehaskell? -- too much magic. However, using lenses is perfect.
 - change the coordinate system to start with lower-left as (0,0)...that is a much saner default for 2d tilebased games IMO - DONE
 - can I get the bounding box for a picture (size and position)? If so, I could do collision detection, which would be awesome. - DONE!
 - adding music?

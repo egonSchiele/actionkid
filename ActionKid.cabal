@@ -32,4 +32,4 @@ library
   build-depends:       base ==4.6.*, gloss, StateVar, lens
   exposed-modules:     ActionKid, ActionKid.Types, ActionKid.Core
   hs-source-dirs:      src
-  Other-modules:       ActionKid.Utils
+  Other-modules:       ActionKid.Utils, ActionKid.Internal, ActionKid.Globals
