@@ -9,8 +9,8 @@ import qualified Debug.Trace as D
 data Jumping = NotJumping | Jumping Int | Falling Int deriving Eq
 
 data Tile = Tile {
-              _tileColor :: Color,
               _tileAttrs :: Attributes,
+              _tileColor :: Color,
               _jumping :: Jumping,
               _moveX :: Float
 }
@@ -18,8 +18,7 @@ data Tile = Tile {
 makeLenses ''Tile
 
 instance MovieClip Tile where
-  getAttrs = _tileAttrs
-  setAttrs mc a = mc { _tileAttrs = a }
+  attrs = tileAttrs
   render tile = (color (tile ^. tileColor) $ box 100 100)
 
 data GameState = GameState {
@@ -28,16 +27,16 @@ data GameState = GameState {
                   _gameAttrs :: Attributes
 }
 
-instance MovieClip GameState where
-    getAttrs = _gameAttrs
-    setAttrs mc a = mc { _gameAttrs = a }
-    render gs = (ActionKid.display . _player $ gs) <> (ActionKid.display . _enemy $ gs)
 
 makeLenses ''GameState
 
+instance MovieClip GameState where
+    attrs = gameAttrs
+    render gs = (ActionKid.display . _player $ gs) <> (ActionKid.display . _enemy $ gs)
+
 gameState = GameState p (x .~ 50 $ e) defaultAttrs
-  where p = Tile blue defaultAttrs NotJumping 0.0
-        e = Tile green defaultAttrs NotJumping 0.0
+  where p = Tile defaultAttrs blue NotJumping 0.0
+        e = Tile defaultAttrs green NotJumping 0.0
 
 main = run "test game" (500, 500) gameState on stepGame
 
