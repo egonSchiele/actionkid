@@ -15,6 +15,15 @@ import Data.StateVar
 import Control.Lens
 import qualified Debug.Trace as D
 import ActionKid.Internal
+import Control.Monad.State
+
+renderTileMap :: MovieClip a => [[Int]] -> (Int -> a) -> (Int, Int) -> [a]
+renderTileMap tileMap f (w,h) =
+    concat $ forWithIndex tileMap $ \(row, j) ->
+         forWithIndex row $ \(tile, i) ->
+            with (f tile) $ do
+              x .= (fromIntegral $ i*w)
+              y .= (fromIntegral $ j*h)
 
 -- | hittest. Check if one MovieClip is hitting another.
 hits :: MovieClip a => a -> a -> Bool

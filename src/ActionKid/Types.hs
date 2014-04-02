@@ -59,7 +59,7 @@ class MovieClip a where
     -- This is a lens for that field. You can build your own lens:
     --
     -- > data Tile = Tile { tileAttrs :: Attributes }
-    -- > attrs t = lens tileAttrs (\mc newAttrs -> mc { tileAttrs = newAttrs })
+    -- > attrs = lens tileAttrs (\mc newAttrs -> mc { tileAttrs = newAttrs })
     --
     -- Basically, the `lens` function takes:
     --

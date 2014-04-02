@@ -1,6 +1,7 @@
 module ActionKid.Utils where
 import Data.List
 import Graphics.Gloss
+import Control.Monad.State
 
 box :: Int -> Int -> Picture
 box w_ h_ = polygon [p1, p2, p3, p4]
@@ -27,3 +28,7 @@ indices arr = [0..(length arr - 1)]
 a // b = floor $ (fromIntegral a) / (fromIntegral b)
 
 mapWithIndex func list = map func (zip list (indices list))
+
+forWithIndex = flip mapWithIndex
+
+with state func = snd $ runState func state
