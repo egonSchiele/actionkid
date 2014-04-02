@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell, NoMonomorphismRestriction #-}
 import ActionKid
 import Data.Monoid ((<>), mconcat)
 import ActionKid.Utils
@@ -23,6 +23,8 @@ data GameState = GameState {
                     _tiles :: [Tile],
                     _ga :: Attributes
 }
+
+makeLenses ''GameState
 
 instance MovieClip GameState where
     getAttrs = _ga

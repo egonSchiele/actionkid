@@ -1,6 +1,5 @@
-- add attrs automatically using templatehaskell?
-- change the coordinate system to start with lower-left as (0,0)...that is a much saner default for 2d tilebased games IMO - DONE
-- can I get the bounding box for a picture (size and position)? If so, I could do collision detection, which would be awesome.
+- adding music?
+- builtin movieclips with MovieClip instances to make it easier to get started?
 
 - this package will let you load images of all types, not just bitmaps:
     http://hackage.haskell.org/package/gloss-juicy
