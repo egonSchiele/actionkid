@@ -13,7 +13,7 @@ build-type:          Simple
 cabal-version:       >=1.8
 
 executable actionkid
-  build-depends:       base ==4.6.*, gloss, StateVar, lens
+  build-depends:       base ==4.6.*, gloss, StateVar, lens, gloss-juicy
   hs-source-dirs:      src
   main-is: Main.hs
 
@@ -29,7 +29,7 @@ Test-Suite test-actionkid
   main-is:             Main.hs
 
 library
-  build-depends:       base ==4.6.*, gloss, StateVar, lens
+  build-depends:       base ==4.6.*, gloss, StateVar, lens, gloss-juicy
   exposed-modules:     ActionKid, ActionKid.Types, ActionKid.Core
   hs-source-dirs:      src
   Other-modules:       ActionKid.Utils
