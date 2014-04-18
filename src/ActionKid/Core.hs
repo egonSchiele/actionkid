@@ -17,6 +17,12 @@ import qualified Debug.Trace as D
 import ActionKid.Internal
 import Control.Monad.State
 
+-- | Given a 2d array, returns a array of movieclips that make up a
+-- grid of tiles. Takes:
+--
+-- 1. A 2d array of ints
+-- 2. A function that takes an int and returns the related movieclip.
+-- 3. (width, height) for the tiles
 renderTileMap :: MovieClip a => [[Int]] -> (Int -> a) -> (Int, Int) -> [a]
 renderTileMap tileMap f (w,h) =
     concat $ forWithIndex tileMap $ \(row, j) ->

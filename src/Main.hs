@@ -15,8 +15,8 @@ data Tile = Empty { _ea :: Attributes }
           | Chip  { _ca :: Attributes }
 
 empty = Empty def
-wall = Wall def
-chip = Chip def
+wall  = Wall def
+chip  = Chip def
 makeLenses ''Tile
 
 image src = translate x y pic
@@ -48,7 +48,7 @@ makeLenses ''GameState
 
 instance MovieClip GameState where
     attrs = ga
-    render gs = pictures $ map ActionKid.display (_tiles gs)
+    render gs = displayAll (_tiles gs)
 
 tileMap = 
     [[1, 1, 1, 1],

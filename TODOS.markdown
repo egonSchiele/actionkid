@@ -8,4 +8,5 @@
 - add support for tilemaps
 
 - templatehaskell for attrs boilerplate?
+  - especially if an MC has multiple types like `data Tile = Player | Enemy`, you can't just use the default lens.
 - moveX/moveY signals as signal attrs?
