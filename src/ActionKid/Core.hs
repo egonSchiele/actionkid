@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell, FlexibleInstances #-}
+
 module ActionKid.Core where
 import ActionKid.Types
 import ActionKid.Utils
@@ -16,6 +18,52 @@ import Control.Lens
 import qualified Debug.Trace as D
 import ActionKid.Internal
 import Control.Monad.State
+import Language.Haskell.TH
+
+-- instance MovieClip GameState where
+--     attrs = ga
+--     render gs = displayAll (_tiles gs)
+
+-- instance MovieClip Tile where
+--     attrs = lens viewer mutator
+--       where viewer mc = _ga mc
+--             mutator mc new = mc {_ga = new}
+--     render gs = color blue $ circle 10
+
+deriveMC :: Name -> Q [Dec]
+deriveMC name = do
+    TyConI (DataD _ _ _ [RecC _ fields] _) <- reify name
+ 
+    let names = map (\(name,_,_) -> name) fields
+        lastField = last names
+ 
+        -- showField :: Name -> Q Exp
+        -- showField name = [|\x -> s ++ " = " ++ show ($(global name) x)|] where
+        --     s = nameBase name
+ 
+        -- showFields :: Q Exp
+        -- showFields = listE $ map showField names
+ 
+    -- dont hardcode the field in the mutator. See:
+    -- http://stackoverflow.com/questions/8469044/template-haskell-with-record-field-name-as-variable
+    [d|instance MovieClip $(conT name) where
+         attrs = lens viewer mutator
+           where viewer mc = $(global lastField) mc
+                 mutator mc new = $(recUpdE [| mc |] [fieldExp lastField [| new |]])
+                 -- mutator mc new = mc { $(global lastField) = new }
+         render gs = color blue $ circle 10|]
+    -- [d|instance Show $(conT name) where show x = intercalate ", " (map ($ x) $showFields)|]
+
+-- Prelude Language.Haskell.TH> runQ [| adit { name = "maggie" } |]
+-- RecUpdE (VarE adit_1627395593) [(:Interactive.name,LitE (StringL "maggie"))]
+
+-- makeChange :: Name -> Q Exp
+-- makeChange x = [|
+--     \z -> Record $ \s -> ( $(recUpdE [| s |] [fieldExp x [| z |]]), () ) |]
+
+-- changeBeta :: Double -> Record ()
+-- changeBeta x = $(makeChange 'beta) x
+
 
 -- | Given a 2d array, returns a array of movieclips that make up a
 -- grid of tiles. Takes:

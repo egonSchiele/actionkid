@@ -45,10 +45,11 @@ data GameState = GameState {
 }
 
 makeLenses ''GameState
+deriveMC ''GameState
 
-instance MovieClip GameState where
-    attrs = ga
-    render gs = displayAll (_tiles gs)
+-- instance MovieClip GameState where
+--     attrs = ga
+--     render gs = displayAll (_tiles gs)
 
 tileMap = 
     [[1, 1, 1, 1],
