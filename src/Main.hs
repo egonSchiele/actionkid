@@ -18,6 +18,7 @@ empty = Empty def
 wall  = Wall def
 chip  = Chip def
 makeLenses ''Tile
+deriveMC ''Tile
 
 image src = translate x y pic
     where pic@(Bitmap w h _ _) = fromJust . unsafePerformIO . loadJuicy $ src
@@ -26,6 +27,7 @@ image src = translate x y pic
 
 {-# NOINLINE image #-}
 
+{-
 instance MovieClip Tile where
     attrs = lens viewer mutator
       where viewer (Empty a) = a
@@ -38,6 +40,7 @@ instance MovieClip Tile where
     render (Empty _) = image "images/empty.png"
     render (Wall _)  = image "images/wall.png"
     render (Chip _)  = image "images/chip.png"
+-}
 
 data GameState = GameState {
                     _tiles :: [Tile],

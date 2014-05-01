@@ -32,10 +32,10 @@ import Language.Haskell.TH
 
 deriveMC :: Name -> Q [Dec]
 deriveMC name = do
-    TyConI (DataD _ _ _ [RecC _ fields] _) <- reify name
+    TyConI (DataD _ _ _ records _) <- reify name
  
-    let names = map (\(name,_,_) -> name) fields
-        lastField = last names
+    -- let names = map (\(name,_,_) -> name) fields
+       --  lastField = last names
  
         -- showField :: Name -> Q Exp
         -- showField name = [|\x -> s ++ " = " ++ show ($(global name) x)|] where
@@ -48,11 +48,33 @@ deriveMC name = do
     -- http://stackoverflow.com/questions/8469044/template-haskell-with-record-field-name-as-variable
     [d|instance MovieClip $(conT name) where
          attrs = lens viewer mutator
-           where viewer mc = $(global lastField) mc
-                 mutator mc new = $(recUpdE [| mc |] [fieldExp lastField [| new |]])
+           where viewer = $(mkViewer records)
+                 mutator = $(mkMutator records)
                  -- mutator mc new = mc { $(global lastField) = new }
          render gs = color blue $ circle 10|]
     -- [d|instance Show $(conT name) where show x = intercalate ", " (map ($ x) $showFields)|]
+
+-- myShow' :: Q [Dec]
+-- viewer records = do
+--    clauses <- mapM mkViewer records
+--    return [FunD (mkName "viewerMaker") clauses]
+
+--           where viewer mc = $(global lastField) mc
+mkViewer records = return $ LamE [VarP mc] (CaseE (VarE mc) $ map (mkMatch mc) records)
+  where mc = mkName "mc"
+
+mkMutator records = return $ LamE [VarP mc, VarP new] (CaseE (VarE mc) $ map (mkMutatorMatch mc new) records)
+  where mc = mkName "mc"
+        new = mkName "new"
+
+mkMutatorMatch mc new (RecC n fields) = Match (ConP n (take (length fields) $ repeat WildP)) (NormalB body) []
+    where lastField = last $ map (\(name,_,_) -> name) fields
+          body = RecUpdE (VarE mc) [(lastField, VarE new)]
+
+mkMatch mc (RecC n fields) = Match (ConP n (take (length fields) $ repeat WildP)) (NormalB body) []
+    where lastField = last $ map (\(name,_,_) -> name) fields
+          body = AppE (VarE lastField) (VarE mc)
+
 
 -- Prelude Language.Haskell.TH> runQ [| adit { name = "maggie" } |]
 -- RecUpdE (VarE adit_1627395593) [(:Interactive.name,LitE (StringL "maggie"))]
