@@ -20,69 +20,56 @@ import ActionKid.Internal
 import Control.Monad.State
 import Language.Haskell.TH
 
--- instance MovieClip GameState where
---     attrs = ga
---     render gs = displayAll (_tiles gs)
-
--- instance MovieClip Tile where
---     attrs = lens viewer mutator
---       where viewer mc = _ga mc
---             mutator mc new = mc {_ga = new}
---     render gs = color blue $ circle 10
-
+-- | Here's the kind of thing this renders. Suppse you have a data type 
+-- like so:
+--
+-- > data Tile = Empty { _ea :: Attributes } | Wall  { _wa :: Attributes } | Chip  { _ca :: Attributes }
+--
+-- This will generate:
+--
+-- > instance MovieClip Tile where
+--       attrs = lens viewer mutator
+--         where viewer (Empty a) = a
+--               viewer (Wall  a) = a
+--               viewer (Chip  a) = a
+--               mutator mc new = case mc of
+--                                  Empty _ -> Empty new
+--                                  Wall  _ -> Wall  new
+--                                  Chip  _ -> Chip  new
+--
+-- The `viewer` function allows you to access attributes. The `mutator` 
+-- function allows you to update the attributes. These are used by the 
+-- MovieClip class so you can write stuff like `player ^. x` or `player.x +~ 10`
 deriveMC :: Name -> Q [Dec]
 deriveMC name = do
     TyConI (DataD _ _ _ records _) <- reify name
  
-    -- let names = map (\(name,_,_) -> name) fields
-       --  lastField = last names
- 
-        -- showField :: Name -> Q Exp
-        -- showField name = [|\x -> s ++ " = " ++ show ($(global name) x)|] where
-        --     s = nameBase name
- 
-        -- showFields :: Q Exp
-        -- showFields = listE $ map showField names
- 
-    -- dont hardcode the field in the mutator. See:
+    -- The following answers helped a lot:
     -- http://stackoverflow.com/questions/8469044/template-haskell-with-record-field-name-as-variable
+    -- http://stackoverflow.com/questions/23400203/multiple-function-definitions-with-template-haskell
     [d|instance MovieClip $(conT name) where
          attrs = lens viewer mutator
            where viewer = $(mkViewer records)
                  mutator = $(mkMutator records)|]
 
--- myShow' :: Q [Dec]
--- viewer records = do
---    clauses <- mapM mkViewer records
---    return [FunD (mkName "viewerMaker") clauses]
-
---           where viewer mc = $(global lastField) mc
+mkViewer :: [Con] -> Q Exp
 mkViewer records = return $ LamE [VarP mc] (CaseE (VarE mc) $ map (mkMatch mc) records)
   where mc = mkName "mc"
 
+mkMutator :: [Con] -> Q Exp
 mkMutator records = return $ LamE [VarP mc, VarP new] (CaseE (VarE mc) $ map (mkMutatorMatch mc new) records)
   where mc = mkName "mc"
         new = mkName "new"
 
+mkMutatorMatch :: Name -> Name -> Con -> Match
 mkMutatorMatch mc new (RecC n fields) = Match (ConP n (take (length fields) $ repeat WildP)) (NormalB body) []
     where lastField = last $ map (\(name,_,_) -> name) fields
           body = RecUpdE (VarE mc) [(lastField, VarE new)]
 
+mkMatch :: Name -> Con -> Match
 mkMatch mc (RecC n fields) = Match (ConP n (take (length fields) $ repeat WildP)) (NormalB body) []
     where lastField = last $ map (\(name,_,_) -> name) fields
           body = AppE (VarE lastField) (VarE mc)
-
-
--- Prelude Language.Haskell.TH> runQ [| adit { name = "maggie" } |]
--- RecUpdE (VarE adit_1627395593) [(:Interactive.name,LitE (StringL "maggie"))]
-
--- makeChange :: Name -> Q Exp
--- makeChange x = [|
---     \z -> Record $ \s -> ( $(recUpdE [| s |] [fieldExp x [| z |]]), () ) |]
-
--- changeBeta :: Double -> Record ()
--- changeBeta x = $(makeChange 'beta) x
-
 
 -- | Given a 2d array, returns a array of movieclips that make up a
 -- grid of tiles. Takes:
