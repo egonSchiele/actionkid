@@ -17,6 +17,7 @@ data Tile = Empty { _ea :: Attributes }
 empty = Empty def
 wall  = Wall def
 chip  = Chip def
+
 makeLenses ''Tile
 deriveMC ''Tile
 
@@ -26,18 +27,6 @@ image src = translate x y pic
           y = fromIntegral h / 2
 
 {-# NOINLINE image #-}
-
-{-
-instance MovieClip Tile where
-    attrs = lens viewer mutator
-      where viewer (Empty a) = a
-            viewer (Wall  a) = a
-            viewer (Chip  a) = a
-            mutator mc new = case mc of
-                               Empty _ -> Empty new
-                               Wall  _ -> Wall  new
-                               Chip  _ -> Chip  new
--}
 
 data GameState = GameState {
                     _tiles :: [Tile],
@@ -54,10 +43,6 @@ instance Renderable Tile where
     
 instance Renderable GameState where
     render gs = displayAll (_tiles gs)
-
--- instance MovieClip GameState where
---     attrs = ga
---     
 
 tileMap = 
     [[1, 1, 1, 1],
