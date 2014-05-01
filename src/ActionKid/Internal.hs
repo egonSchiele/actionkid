@@ -71,6 +71,7 @@ onEnterFrame :: MovieClip a => (Float -> a -> IO a) -> Float -> a -> IO a
 onEnterFrame stepFunc num state = stepFunc num state
 
 -- | Called to draw the game. Translates the coordinate system.
+draw :: Renderable a => a -> IO Picture
 draw gs = do
   w <- get boardWidth
   h <- get boardHeight

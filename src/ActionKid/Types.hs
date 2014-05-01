@@ -74,14 +74,6 @@ class MovieClip a where
     -- > attrs = tileAttrs
     attrs :: Lens a a Attributes Attributes
 
-    -- | This is how your data type actually gets rendered.
-    -- ActionKid will take care of positioning, scaling etc for you.
-    -- All you need to define is how the type should be rendered.
-    -- Example:
-    --
-    -- > render tile = color blue $ circle 5
-    render :: a -> Picture
-
     -- | These are the different lenses you can use on your data type
     -- after you make it an instance of MovieClip.
     x :: Lens a a Float Float
@@ -103,6 +95,14 @@ class MovieClip a where
     zindex :: Lens a a Int Int
     zindex = lens (view $ attrs . azindex) (flip $ set (attrs . azindex))
 
+class MovieClip a => Renderable a where
+    -- | This is how your data type actually gets rendered.
+    -- ActionKid will take care of positioning, scaling etc for you.
+    -- All you need to define is how the type should be rendered.
+    -- Example:
+    --
+    -- > render tile = color blue $ circle 5
+    render :: a -> Picture
     -- | This is the internal function that positions the MovieClip
     -- correctly, checks if it is visible, etc etc. Override this at your
     -- own peril.

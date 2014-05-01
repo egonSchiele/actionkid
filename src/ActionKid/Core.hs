@@ -49,10 +49,7 @@ deriveMC name = do
     [d|instance MovieClip $(conT name) where
          attrs = lens viewer mutator
            where viewer = $(mkViewer records)
-                 mutator = $(mkMutator records)
-                 -- mutator mc new = mc { $(global lastField) = new }
-         render gs = color blue $ circle 10|]
-    -- [d|instance Show $(conT name) where show x = intercalate ", " (map ($ x) $showFields)|]
+                 mutator = $(mkMutator records)|]
 
 -- myShow' :: Q [Dec]
 -- viewer records = do
@@ -102,7 +99,7 @@ renderTileMap tileMap f (w,h) =
               y .= (fromIntegral $ j*h)
 
 -- | hittest. Check if one MovieClip is hitting another.
-hits :: MovieClip a => a -> a -> Bool
+hits :: Renderable a => a -> a -> Bool
 hits a b = f a `intersects` f b
     where f = boundingBox . display
 
@@ -117,7 +114,7 @@ hits a b = f a `intersects` f b
 -- 4. a key handler function (exactly the same as Gloss)
 --
 -- 5. a step function (onEnterFrame)
-run :: MovieClip a => String -> (Int, Int) -> a -> (Event -> a -> IO a) -> (Float -> a -> IO a) -> IO ()
+run :: (MovieClip a, Renderable a) => String -> (Int, Int) -> a -> (Event -> a -> IO a) -> (Float -> a -> IO a) -> IO ()
 run title (w,h) state keyHandler stepFunc = do
   boardWidth $= w
   boardHeight $= h
@@ -136,5 +133,5 @@ run title (w,h) state keyHandler stepFunc = do
 -- | Convenience function. Given a list of movie clips,
 -- displays all of them.
 -- TODO support zindex.
-displayAll :: MovieClip a => [a] -> Picture
+displayAll :: Renderable a => [a] -> Picture
 displayAll mcs = Pictures $ map display mcs

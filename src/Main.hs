@@ -37,9 +37,6 @@ instance MovieClip Tile where
                                Empty _ -> Empty new
                                Wall  _ -> Wall  new
                                Chip  _ -> Chip  new
-    render (Empty _) = image "images/empty.png"
-    render (Wall _)  = image "images/wall.png"
-    render (Chip _)  = image "images/chip.png"
 -}
 
 data GameState = GameState {
@@ -50,9 +47,17 @@ data GameState = GameState {
 makeLenses ''GameState
 deriveMC ''GameState
 
+instance Renderable Tile where
+    render (Empty _) = image "images/empty.png"
+    render (Wall _)  = image "images/wall.png"
+    render (Chip _)  = image "images/chip.png"
+    
+instance Renderable GameState where
+    render gs = displayAll (_tiles gs)
+
 -- instance MovieClip GameState where
 --     attrs = ga
---     render gs = displayAll (_tiles gs)
+--     
 
 tileMap = 
     [[1, 1, 1, 1],
