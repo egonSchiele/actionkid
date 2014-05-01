@@ -52,24 +52,28 @@ deriveMC name = do
            where viewer = $(mkViewer records)
                  mutator = $(mkMutator records)|]
 
+-- | Used internally. Generates something like \mc -> case mc of ...
 mkViewer :: [Con] -> Q Exp
 mkViewer records = return $ LamE [VarP mc] (CaseE (VarE mc) $ map (mkMatch mc) records)
   where mc = mkName "mc"
 
+-- | Used internally. Generates something like \mc new -> case mc of ...
 mkMutator :: [Con] -> Q Exp
 mkMutator records = return $ LamE [VarP mc, VarP new] (CaseE (VarE mc) $ map (mkMutatorMatch mc new) records)
   where mc = mkName "mc"
         new = mkName "new"
 
-mkMutatorMatch :: Name -> Name -> Con -> Match
-mkMutatorMatch mc new (RecC n fields) = Match (ConP n (take (length fields) $ repeat WildP)) (NormalB body) []
-    where lastField = last $ map (\(name,_,_) -> name) fields
-          body = RecUpdE (VarE mc) [(lastField, VarE new)]
-
+-- | Used internally by the `mkViewer` function to make all the cases
 mkMatch :: Name -> Con -> Match
 mkMatch mc (RecC n fields) = Match (ConP n (take (length fields) $ repeat WildP)) (NormalB body) []
     where lastField = last $ map (\(name,_,_) -> name) fields
           body = AppE (VarE lastField) (VarE mc)
+
+-- | Used internally by the `mkMutator` function to make all the cases
+mkMutatorMatch :: Name -> Name -> Con -> Match
+mkMutatorMatch mc new (RecC n fields) = Match (ConP n (take (length fields) $ repeat WildP)) (NormalB body) []
+    where lastField = last $ map (\(name,_,_) -> name) fields
+          body = RecUpdE (VarE mc) [(lastField, VarE new)]
 
 -- | Given a 2d array, returns a array of movieclips that make up a
 -- grid of tiles. Takes:
