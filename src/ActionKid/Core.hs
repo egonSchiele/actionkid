@@ -20,6 +20,25 @@ import ActionKid.Internal
 import Control.Monad.State
 import Language.Haskell.TH
 
+-- This will eventually be a function that takes a tile map png or jpg and
+-- cuts it up into the individual tiles and returns them as a 2-d array.
+-- http://hackage.haskell.org/package/vector-0.5/docs/Data-Vector-Unboxed.html
+-- http://www.haskell.org/haskellwiki/Numeric_Haskell:_A_Vector_Tutorial#Indexing_vectors
+-- http://www.haskell.org/haskellwiki/Numeric_Haskell:_A_Repa_Tutorial#Indexing_arrays
+-- http://hackage.haskell.org/package/repa-3.2.3.3/docs/Data-Array-Repa.html#t:Array
+-- loadTileMap :: String -> Int -> Int -> [[Picture]]
+-- loadTileMap src w h = 
+--    where image = (fromRight . unsafePerformIO . readImage $ src) :: Img RGBA
+--          vec   = toUnboxed image
+
+-- > :t vec
+-- vec :: U.Vector GHC.Word.Word8
+--
+-- vec U.! 14 => gives you a number (word8)
+-- U.length vec == 4096 (4 channels, RGBA, so really 1024...and it's 
+-- a 32x32 image. 32x32 = 1024).
+
+
 -- | Here's the kind of thing this renders. Suppse you have a data type 
 -- like so:
 --
@@ -69,11 +88,20 @@ mkMatch mc (RecC n fields) = Match (ConP n (take (length fields) $ repeat WildP)
     where lastField = last $ map (\(name,_,_) -> name) fields
           body = AppE (VarE lastField) (VarE mc)
 
+-- THis works with data types without names for fields, but mkMutatorMatch
+-- doesn't work yet
+mkMatch mc (NormalC n fields) = Match (ConP n ((take ((length fields) - 1) $ repeat WildP) ++ [VarP mcAttrs])) (NormalB $ VarE mcAttrs) []
+    where mcAttrs = mkName "mcAttrs"
+
 -- | Used internally by the `mkMutator` function to make all the cases
 mkMutatorMatch :: Name -> Name -> Con -> Match
 mkMutatorMatch mc new (RecC n fields) = Match (ConP n (take (length fields) $ repeat WildP)) (NormalB body) []
     where lastField = last $ map (\(name,_,_) -> name) fields
           body = RecUpdE (VarE mc) [(lastField, VarE new)]
+
+mkMutatorMatch mc new (NormalC n fields) = Match (ConP n (take (length fields) $ repeat WildP)) (NormalB body) []
+    where lastField = last $ map fst fields
+          body = AppE (ConE n) (VarE new) -- NOTE: this only works for data types with only one attribute: Attributes. Like `data Color = Red Attributes`. Make it work for more than one.
 
 -- | Given a 2d array, returns a array of movieclips that make up a
 -- grid of tiles. Takes:
@@ -87,7 +115,9 @@ renderTileMap tileMap f (w,h) =
          forWithIndex row $ \(tile, i) ->
             with (f tile) $ do
               x .= (fromIntegral $ i*w)
-              y .= (fromIntegral $ j*h)
+              y .= (fromIntegral $ boardW - j*h)
+
+    where boardW = (*h) . length . head $ tileMap
 
 -- | hittest. Check if one MovieClip is hitting another.
 hits :: Renderable a => a -> a -> Bool
