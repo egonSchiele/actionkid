@@ -35,6 +35,10 @@ image src = translate x y pic
           x = fromIntegral w / 2
           y = fromIntegral h / 2
 
+-- http://hackage.haskell.org/package/vector-0.5/docs/Data-Vector-Unboxed.html
+-- http://www.haskell.org/haskellwiki/Numeric_Haskell:_A_Vector_Tutorial#Indexing_vectors
+-- http://www.haskell.org/haskellwiki/Numeric_Haskell:_A_Repa_Tutorial#Indexing_arrays
+-- http://hackage.haskell.org/package/repa-3.2.3.3/docs/Data-Array-Repa.html#t:Array
 loadTileMap :: String -> Int -> Int -> [Picture]
 loadTileMap src w h = 
     where image = (fromRight . unsafePerformIO . readImage $ src) :: Img RGBA
