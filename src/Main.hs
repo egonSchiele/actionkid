@@ -4,57 +4,51 @@ import ActionKid
 import Data.Monoid ((<>), mconcat)
 import ActionKid.Utils
 import Control.Lens
-import Graphics.Gloss
+import Graphics.Gloss hiding (display)
 import qualified Debug.Trace as D
 import Graphics.Gloss.Juicy
 import System.IO.Unsafe
 import Data.Maybe
 import Codec.Picture hiding (readImage)
-import Data.Either
 import Codec.Picture.Repa
 import qualified Data.Vector.Unboxed as U
 
-data Tile = Empty { _ea :: Attributes }
-          | Wall  { _wa :: Attributes }
-          | Chip  { _ca :: Attributes }
+tileSize = 32
+
+data Tile = Empty Attributes
+          | Wall  Attributes
+          | Chip  Attributes
+          deriving Show
 
 empty = Empty def
 wall  = Wall def
 chip  = Chip def
 
-makeLenses ''Tile
 deriveMC ''Tile
 
 fromRight (Right x) = x
 
+data Direction = DirUp | DirDown | DirLeft | DirRight
+
+data Player = Player {
+                _direction :: Direction,
+                _ar :: Attributes
+}
+
+makeLenses ''Player
+deriveMC ''Player
+
 image :: String -> Picture
 image src = translate x y pic
     where pic@(Bitmap w h _ _) = fromJust . unsafePerformIO . loadJuicy $ src
-    -- where image = fromRight . unsafePerformIO . readImage $ src
-    --       pic@(Bitmap w h _ _) = fromJust . fromDynamicImage . imgToImage $ image
           x = fromIntegral w / 2
           y = fromIntegral h / 2
-
--- http://hackage.haskell.org/package/vector-0.5/docs/Data-Vector-Unboxed.html
--- http://www.haskell.org/haskellwiki/Numeric_Haskell:_A_Vector_Tutorial#Indexing_vectors
--- http://www.haskell.org/haskellwiki/Numeric_Haskell:_A_Repa_Tutorial#Indexing_arrays
--- http://hackage.haskell.org/package/repa-3.2.3.3/docs/Data-Array-Repa.html#t:Array
-loadTileMap :: String -> Int -> Int -> [Picture]
-loadTileMap src w h = 
-    where image = (fromRight . unsafePerformIO . readImage $ src) :: Img RGBA
-          vec   = toUnboxed image
-
--- > :t vec
--- vec :: U.Vector GHC.Word.Word8
---
--- vec U.! 14 => gives you a number (word8)
--- U.length vec == 4096 (4 channels, RGBA, so really 1024...and it's 
--- a 32x32 image. 32x32 = 1024).
 
 {-# NOINLINE image #-}
 
 data GameState = GameState {
                     _tiles :: [Tile],
+                    _player :: Player,
                     _ga :: Attributes
 }
 
@@ -65,9 +59,16 @@ instance Renderable Tile where
     render (Empty _) = image "images/empty.png"
     render (Wall _)  = image "images/wall.png"
     render (Chip _)  = image "images/chip.png"
-    
+
 instance Renderable GameState where
-    render gs = displayAll (_tiles gs)
+    render gs = displayAll (_tiles gs) <> display (_player gs)
+
+instance Renderable Player where
+    render p = case p ^. direction of
+                 DirUp    -> image "images/player_up.png"
+                 DirDown  -> image "images/player_down.png"
+                 DirLeft  -> image "images/player_left.png"
+                 DirRight -> image "images/player_right.png"
 
 tileMap = 
     [[1, 1, 1, 1],
@@ -76,13 +77,79 @@ tileMap =
      [1, 0, 0, 1],
      [1, 1, 1, 1]]
 
-gameState = GameState tiles def
-  where tiles = renderTileMap tileMap f (32,32)
-        f 0 = empty
+boardW = length . head $ tileMap
+boardH = length tileMap
+
+playerCoords :: GameState -> (Int, Int)
+playerCoords gs = ((floor (p ^. x)) // tileSize, (((boardH * tileSize) - (floor (p ^. y))) // tileSize)-1)
+    where p = gs ^. player
+          ts = gs ^. tiles
+
+currentIdx :: GameState -> Int
+currentIdx gs = y_ * boardW + x_
+    where (x_,y_) = playerCoords gs
+
+currentTile gs = D.trace (show curTile) $ curTile
+    where (x_,y_) = playerCoords gs
+          curTile = (_tiles gs) !! (currentIdx gs)
+
+leftTile gs = (_tiles gs) !! (currentIdx gs - 1)
+  where (x_,y_) = playerCoords gs
+
+rightTile gs = (_tiles gs) !! (currentIdx gs + 1)
+  where (x_,y_) = playerCoords gs
+
+upTile gs = (_tiles gs) !! (currentIdx gs - boardW)
+  where (x_,y_) = playerCoords gs
+
+downTile gs = (_tiles gs) !! (currentIdx gs + boardW)
+  where (x_,y_) = playerCoords gs
+
+renderedTiles = renderTileMap tileMap f (tileSize, tileSize)
+  where f 0 = empty
         f 1 = wall
         f 2 = chip
 
-main = run "chips challenge" ((*32) . length . head $ tileMap, (*32) . length $ tileMap) gameState on stepGame
+gameState = GameState renderedTiles (x .~ 64 $ player_) def
+        where player_ = (Player DirDown def)
 
-on _ gs = return gs
-stepGame _ gs = return gs
+main = run "chips challenge" (boardW * tileSize, boardH * tileSize) gameState on stepGame
+
+on (EventKey (SpecialKey KeyLeft) Down _ _) gs = return $ player.direction .~ DirLeft
+                                                        $ player.x -~ x_
+                                                        $ gs
+    where x_ = case leftTile gs of
+                 Wall _ -> 0
+                 _ -> tileSize
+
+on (EventKey (SpecialKey KeyRight) Down _ _) gs = return $ player.direction .~ DirRight
+                                                        $ player.x +~ x_
+                                                        $ gs
+    where x_ = case rightTile gs of
+                 Wall _ -> 0
+                 _ -> tileSize
+
+on (EventKey (SpecialKey KeyUp) Down _ _) gs = return $ player.direction .~ DirUp
+                                                        $ player.y +~ y_
+                                                        $ gs
+    where y_ = case upTile gs of
+                 Wall _ -> 0
+                 _ -> tileSize
+
+on (EventKey (SpecialKey KeyDown) Down _ _) gs = return $ player.direction .~ DirDown
+                                                        $ player.y -~ y_
+                                                        $ gs
+    where y_ = case downTile gs of
+                 Wall _ -> 0
+                 _ -> tileSize
+
+on (EventKey (SpecialKey KeySpace) Down _ _) gs = return gameState
+
+on _ gs = return $ player.direction .~ DirDown $ gs
+stepGame _ gs = do
+    let playerIx = currentIdx gs
+    case currentTile gs of
+        Chip _ -> do
+          let attrs_ = ((gs ^. tiles) !! playerIx) ^. attrs
+          return $ tiles.(ix playerIx) .~ (Empty attrs_) $ gs
+        _ -> return gs

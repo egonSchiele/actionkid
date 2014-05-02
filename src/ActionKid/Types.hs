@@ -7,6 +7,7 @@ import Data.StateVar
 import Control.Monad hiding (join)
 import Control.Lens
 import System.IO.Unsafe
+import qualified Debug.Trace as D
 
 -- | Attributes that get added to each MovieClip.
 -- You won't use them raw, like this. Instead, each
@@ -25,7 +26,7 @@ data Attributes = Attributes {
                     -- the `displayAll` function, you have to handle
                     -- zindex yourself!
                     _azindex :: Int
-}
+} deriving Show
 
 makeLenses ''Attributes
 
@@ -111,4 +112,4 @@ class MovieClip a => Renderable a where
       | mc ^. visible = translate (mc ^. x) (mc ^. y) $
                         scale (mc ^. scaleX) (mc ^. scaleY) $
                         render mc
-      | otherwise = blank
+      | otherwise = D.trace "not rendering invisible movieclip" blank
