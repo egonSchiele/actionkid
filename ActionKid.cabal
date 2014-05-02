@@ -16,6 +16,7 @@ executable actionkid
   build-depends:       base ==4.6.*, gloss, StateVar, lens, gloss-juicy, mtl, template-haskell, JuicyPixels ==3.1.*, JuicyPixels-repa ==0.7, repa ==3.2.3.3, vector ==0.10.0.1
   hs-source-dirs:      src
   main-is: Main.hs
+  ghc-options: -rtsopts -with-rtsopts=-M500m
 
 -- Note: if you see an error message like:
 -- unknown symbol `dominionzm0zi1zi0zi3_DominionziCardsziIntrigue_intrigueCards_closure'
