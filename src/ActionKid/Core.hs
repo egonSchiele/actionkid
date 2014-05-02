@@ -115,9 +115,9 @@ renderTileMap tileMap f (w,h) =
          forWithIndex row $ \(tile, i) ->
             with (f tile) $ do
               x .= (fromIntegral $ i*w)
-              y .= (fromIntegral $ boardW - j*h)
+              y .= (fromIntegral $ boardH - h - j*h)
 
-    where boardW = (*h) . length . head $ tileMap
+    where boardH = (*h) . length $ tileMap
 
 -- | hittest. Check if one MovieClip is hitting another.
 hits :: Renderable a => a -> a -> Bool

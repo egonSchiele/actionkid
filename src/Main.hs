@@ -78,21 +78,36 @@ data GameState = GameState {
 makeLenses ''GameState
 deriveMC ''GameState
 
+emptyPng = image "images/empty.png"
+wallPng = image "images/wall.png"
+chipPng = image "images/chip.png"
+key_yellowPng = image "images/key_yellow.png"
+key_redPng = image "images/key_red.png"
+key_greenPng = image "images/key_green.png"
+key_bluePng = image "images/key_blue.png"
+lock_yellowPng = image "images/lock_yellow.png"
+lock_redPng = image "images/lock_red.png"
+lock_greenPng = image "images/lock_green.png"
+lock_bluePng = image "images/lock_blue.png"
+gatePng = image "images/gate.png"
+gate_final1Png = image "images/gate_final1.png"
+helpPng = image "images/help.png"
+
 instance Renderable Tile where
-    render (Empty _)      = image "images/empty.png"
-    render (Wall _)       = image "images/wall.png"
-    render (Chip _)       = image "images/chip.png"
-    render (KeyYellow _)  = image "images/key_yellow.png"
-    render (KeyRed _)     = image "images/key_red.png"
-    render (KeyGreen _)   = image "images/key_green.png"
-    render (KeyBlue _)    = image "images/key_blue.png"
-    render (LockYellow _) = image "images/lock_yellow.png"
-    render (LockRed _)    = image "images/lock_red.png"
-    render (LockGreen _)  = image "images/lock_green.png"
-    render (LockBlue _)   = image "images/lock_blue.png"
-    render (Gate _)       = image "images/gate.png"
-    render (GateFinal _)  = image "images/gate_final1.png"
-    render (Help _)       = image "images/help.png"
+    render (Empty _)      = emptyPng
+    render (Wall _)       = wallPng
+    render (Chip _)       = chipPng
+    render (KeyYellow _)  = key_yellowPng
+    render (KeyRed _)     = key_redPng
+    render (KeyGreen _)   = key_greenPng
+    render (KeyBlue _)    = key_bluePng
+    render (LockYellow _) = lock_yellowPng
+    render (LockRed _)    = lock_redPng
+    render (LockGreen _)  = lock_greenPng
+    render (LockBlue _)   = lock_bluePng
+    render (Gate _)       = gatePng
+    render (GateFinal _)  = gate_final1Png
+    render (Help _)       = helpPng
 
 instance Renderable GameState where
     render gs = displayAll (_tiles gs) <> display (_player gs)
@@ -156,12 +171,12 @@ renderedTiles = renderTileMap tileMap f (tileSize, tileSize)
           f 13 = gateFinal
           f 14 = help
 
-gameState = GameState renderedTiles (x .~ 64 $ y .~ 32 $ player_) def
+gameState = GameState renderedTiles (x .~ (8*tileSize) $ y .~ (8*tileSize) $ player_) def
         where player_ = (Player DirDown def)
 
 main = run "chips challenge" (boardW * tileSize, boardH * tileSize) gameState on stepGame
 
-{-
+
 on (EventKey (SpecialKey KeyLeft) Down _ _) gs = return $ player.direction .~ DirLeft
                                                         $ player.x -~ x_
                                                         $ gs
@@ -193,11 +208,11 @@ on (EventKey (SpecialKey KeyDown) Down _ _) gs = return $ player.direction .~ Di
 on (EventKey (SpecialKey KeySpace) Down _ _) gs = return gameState
 
 on _ gs = return $ player.direction .~ DirDown $ gs
--}
 
-on _ gs = return gs
 
-{-
+-- on _ gs = return gs
+
+
 stepGame _ gs = do
     let playerIx = currentIdx gs
     case currentTile gs of
@@ -206,6 +221,6 @@ stepGame _ gs = do
           return $ tiles.(ix playerIx) .~ (Empty attrs_) $ gs
         _ -> return gs
 
--}
 
-stepGame _ gs = return gs
+
+-- stepGame _ gs = return gs
