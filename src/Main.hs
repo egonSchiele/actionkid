@@ -72,6 +72,10 @@ image src = translate x y pic
 data GameState = GameState {
                     _tiles :: [Tile],
                     _player :: Player,
+                    _redKeyCount :: Int,
+                    _blueKeyCount :: Int,
+                    _yellowKeyCount :: Int,
+                    _hasGreenKey :: Bool,
                     _ga :: Attributes
 }
 
@@ -171,56 +175,62 @@ renderedTiles = renderTileMap tileMap f (tileSize, tileSize)
           f 13 = gateFinal
           f 14 = help
 
-gameState = GameState renderedTiles (x .~ (8*tileSize) $ y .~ (8*tileSize) $ player_) def
+gameState = GameState renderedTiles (x .~ (8*tileSize) $ y .~ (8*tileSize) $ player_) 0 0 0 False def
         where player_ = (Player DirDown def)
 
 main = run "chips challenge" (boardW * tileSize, boardH * tileSize) gameState on stepGame
 
 
-on (EventKey (SpecialKey KeyLeft) Down _ _) gs = return $ player.direction .~ DirLeft
-                                                        $ player.x -~ x_
-                                                        $ gs
-    where x_ = case leftTile gs of
-                 Wall _ -> 0
-                 _ -> tileSize
+checkWall func gs newGs = case func gs of
+                      Wall _ -> gs
+                      _ -> newGs
 
-on (EventKey (SpecialKey KeyRight) Down _ _) gs = return $ player.direction .~ DirRight
-                                                        $ player.x +~ x_
-                                                        $ gs
-    where x_ = case rightTile gs of
-                 Wall _ -> 0
-                 _ -> tileSize
+checkLock func gs newGs = case func gs of
+                            LockRed _    -> if _redKeyCount gs > 0 then newGs else gs
+                            LockBlue _   -> if _blueKeyCount gs > 0 then newGs else gs
+                            LockGreen _  -> if _hasGreenKey gs then newGs else gs
+                            LockYellow _ -> if _yellowKeyCount gs > 0 then newGs else gs
+                            _ -> newGs
 
-on (EventKey (SpecialKey KeyUp) Down _ _) gs = return $ player.direction .~ DirUp
-                                                        $ player.y +~ y_
-                                                        $ gs
-    where y_ = case upTile gs of
-                 Wall _ -> 0
-                 _ -> tileSize
+on (EventKey (SpecialKey KeyLeft) Down _ _) gs = return $ checkLock leftTile gs . checkWall leftTile gs $ move
+    where move = player.direction .~ DirLeft
+                 $ player.x -~ tileSize
+                 $ gs
 
-on (EventKey (SpecialKey KeyDown) Down _ _) gs = return $ player.direction .~ DirDown
-                                                        $ player.y -~ y_
-                                                        $ gs
-    where y_ = case downTile gs of
-                 Wall _ -> 0
-                 _ -> tileSize
+on (EventKey (SpecialKey KeyRight) Down _ _) gs = return $ checkLock rightTile gs . checkWall rightTile gs $ move
+    where move = player.direction .~ DirRight
+                 $ player.x +~ tileSize
+                 $ gs
+
+on (EventKey (SpecialKey KeyUp) Down _ _) gs = return $ checkLock upTile gs . checkWall upTile gs $ move
+    where move = player.direction .~ DirUp
+                 $ player.y +~ tileSize
+                 $ gs
+
+on (EventKey (SpecialKey KeyDown) Down _ _) gs = return $ checkLock downTile gs . checkWall downTile gs $ move
+    where move = player.direction .~ DirDown
+                 $ player.y -~ tileSize
+                 $ gs
 
 on (EventKey (SpecialKey KeySpace) Down _ _) gs = return gameState
-
 on _ gs = return $ player.direction .~ DirDown $ gs
-
 
 -- on _ gs = return gs
 
-
 stepGame _ gs = do
     let playerIx = currentIdx gs
+    let attrs_ = ((gs ^. tiles) !! playerIx) ^. attrs
+    let reset i = tiles.(ix i) .~ (Empty attrs_) $ gs
     case currentTile gs of
-        Chip _ -> do
-          let attrs_ = ((gs ^. tiles) !! playerIx) ^. attrs
-          return $ tiles.(ix playerIx) .~ (Empty attrs_) $ gs
+        Chip _ -> return $ reset playerIx
+        KeyYellow _ -> return $ yellowKeyCount +~ 1 $ reset playerIx
+        KeyBlue _ -> return $ blueKeyCount +~ 1 $ reset playerIx
+        KeyGreen _ -> return $ hasGreenKey .~ True $ reset playerIx
+        KeyRed _ -> return $ redKeyCount +~ 1 $ reset playerIx
+        LockYellow _ -> return $ yellowKeyCount -~ 1 $ reset playerIx
+        LockBlue _ -> return $ blueKeyCount -~ 1 $ reset playerIx
+        LockGreen _ -> return $ reset playerIx
+        LockRed _ -> return $ redKeyCount -~ 1 $ reset playerIx
         _ -> return gs
-
-
 
 -- stepGame _ gs = return gs
