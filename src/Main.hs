@@ -29,7 +29,6 @@ data Tile = Empty Attributes
           | Gate Attributes
           | GateFinal Attributes
           | Help Attributes
-
           deriving Show
 
 empty = Empty def
@@ -61,14 +60,6 @@ data Player = Player {
 makeLenses ''Player
 deriveMC ''Player
 
-image :: String -> Picture
-image src = translate x y pic
-    where pic@(Bitmap w h _ _) = fromJust . unsafePerformIO . loadJuicy $ src
-          x = fromIntegral w / 2
-          y = fromIntegral h / 2
-
-{-# NOINLINE image #-}
-
 data GameState = GameState {
                     _tiles :: [Tile],
                     _player :: Player,
@@ -82,36 +73,21 @@ data GameState = GameState {
 makeLenses ''GameState
 deriveMC ''GameState
 
-emptyPng = image "images/empty.png"
-wallPng = image "images/wall.png"
-chipPng = image "images/chip.png"
-key_yellowPng = image "images/key_yellow.png"
-key_redPng = image "images/key_red.png"
-key_greenPng = image "images/key_green.png"
-key_bluePng = image "images/key_blue.png"
-lock_yellowPng = image "images/lock_yellow.png"
-lock_redPng = image "images/lock_red.png"
-lock_greenPng = image "images/lock_green.png"
-lock_bluePng = image "images/lock_blue.png"
-gatePng = image "images/gate.png"
-gate_final1Png = image "images/gate_final1.png"
-helpPng = image "images/help.png"
-
 instance Renderable Tile where
-    render (Empty _)      = emptyPng
-    render (Wall _)       = wallPng
-    render (Chip _)       = chipPng
-    render (KeyYellow _)  = key_yellowPng
-    render (KeyRed _)     = key_redPng
-    render (KeyGreen _)   = key_greenPng
-    render (KeyBlue _)    = key_bluePng
-    render (LockYellow _) = lock_yellowPng
-    render (LockRed _)    = lock_redPng
-    render (LockGreen _)  = lock_greenPng
-    render (LockBlue _)   = lock_bluePng
-    render (Gate _)       = gatePng
-    render (GateFinal _)  = gate_final1Png
-    render (Help _)       = helpPng
+    render (Empty _)      = image "images/empty.png"
+    render (Wall _)       = image "images/wall.png"
+    render (Chip _)       = image "images/chip.png"
+    render (KeyYellow _)  = image "images/key_yellow.png"
+    render (KeyRed _)     = image "images/key_red.png"
+    render (KeyGreen _)   = image "images/key_green.png"
+    render (KeyBlue _)    = image "images/key_blue.png"
+    render (LockYellow _) = image "images/lock_yellow.png"
+    render (LockRed _)    = image "images/lock_red.png"
+    render (LockGreen _)  = image "images/lock_green.png"
+    render (LockBlue _)   = image "images/lock_blue.png"
+    render (Gate _)       = image "images/gate.png"
+    render (GateFinal _)  = image "images/gate_final1.png"
+    render (Help _)       = image "images/help.png"
 
 instance Renderable GameState where
     render gs = displayAll (_tiles gs) <> display (_player gs)
@@ -215,8 +191,6 @@ on (EventKey (SpecialKey KeyDown) Down _ _) gs = return $ checkLock downTile gs 
 on (EventKey (SpecialKey KeySpace) Down _ _) gs = return gameState
 on _ gs = return $ player.direction .~ DirDown $ gs
 
--- on _ gs = return gs
-
 stepGame _ gs = do
     let playerIx = currentIdx gs
     let attrs_ = ((gs ^. tiles) !! playerIx) ^. attrs
@@ -232,5 +206,3 @@ stepGame _ gs = do
         LockGreen _ -> return $ reset playerIx
         LockRed _ -> return $ redKeyCount -~ 1 $ reset playerIx
         _ -> return gs
-
--- stepGame _ gs = return gs

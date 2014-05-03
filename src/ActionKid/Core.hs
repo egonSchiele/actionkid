@@ -19,6 +19,30 @@ import qualified Debug.Trace as D
 import ActionKid.Internal
 import Control.Monad.State
 import Language.Haskell.TH
+import Data.IORef
+import ActionKid.Globals
+import qualified Data.Map as M
+import Control.Seq
+
+-- | Given a path, loads the image and returns it as a picture. It performs 
+-- caching, so if the same path has been given before, it will just return
+-- the image from the cache. This makes this function easily usable in 
+-- `render`...you don't have to worry about the image getting loaded into 
+-- memory multiple times. By my testing, this actually worked, and memory
+-- didn't increase. Before the caching, it WAS reading images into memory 
+-- multiple times...leading to massive memory use.
+image :: String -> Picture
+image src = case M.lookup src (unsafePerformIO . readIORef $ imageCache) of
+              -- force evaluation of the first part, so the image gets 
+              -- cached in the imageCache, before returning the read image.
+              Nothing -> (unsafePerformIO $ modifyIORef imageCache (M.insert src newPic)) `seq` newPic
+              Just cachedPic -> cachedPic
+    where pic@(Bitmap w h _ _) = fromJust . unsafePerformIO . loadJuicy $ src
+          newPic = translate x y pic
+          x = fromIntegral w / 2
+          y = fromIntegral h / 2
+
+{-# NOINLINE image #-}
 
 -- This will eventually be a function that takes a tile map png or jpg and
 -- cuts it up into the individual tiles and returns them as a 2-d array.
