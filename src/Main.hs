@@ -6,12 +6,36 @@ import ActionKid.Utils
 import Control.Lens
 import Graphics.Gloss hiding (display)
 import qualified Debug.Trace as D
-import Graphics.Gloss.Juicy
-import System.IO.Unsafe
 import Data.Maybe
 import Codec.Picture hiding (readImage)
 import Codec.Picture.Repa
 import qualified Data.Vector.Unboxed as U
+import Data.IORef
+import ActionKid.Globals
+import qualified Data.Map as M
+import Control.Seq
+import System.IO.Unsafe
+import Graphics.Gloss.Juicy
+
+-- | Given a path, loads the image and returns it as a picture. It performs 
+-- caching, so if the same path has been given before, it will just return
+-- the image from the cache. This makes this function easily usable in 
+-- `render`...you don't have to worry about the image getting loaded into 
+-- memory multiple times. By my testing, this actually worked, and memory
+-- didn't increase. Before the caching, it WAS reading images into memory 
+-- multiple times...leading to massive memory use.
+image :: String -> Picture
+image src = case M.lookup src (unsafePerformIO . readIORef $ imageCache) of
+              -- force evaluation of the first part, so the image gets 
+              -- cached in the imageCache, before returning the read image.
+              Nothing -> (unsafePerformIO $ modifyIORef imageCache (M.insert src newPic)) `seq` newPic
+              Just cachedPic -> cachedPic
+    where pic@(Bitmap w h _ _) = fromJust . unsafePerformIO . loadJuicy $ src
+          newPic = translate x y pic
+          x = fromIntegral w / 2
+          y = fromIntegral h / 2
+
+{-# NOINLINE image #-}
 
 tileSize = 32
 
@@ -31,47 +55,7 @@ data Tile = Empty Attributes
           | Help Attributes
           deriving Show
 
-empty = Empty def
-wall  = Wall def
-chip  = Chip def
-keyYellow = KeyYellow def
-keyRed = KeyRed def
-keyGreen = KeyGreen def
-keyBlue = KeyBlue def
-lockYellow = LockYellow def
-lockRed = LockRed def
-lockGreen = LockGreen def
-lockBlue = LockBlue def
-gate = Gate def
-gateFinal = GateFinal def
-help = Help def
-
 deriveMC ''Tile
-
-fromRight (Right x) = x
-
-data Direction = DirUp | DirDown | DirLeft | DirRight
-
-data Player = Player {
-                _direction :: Direction,
-                _ar :: Attributes
-}
-
-makeLenses ''Player
-deriveMC ''Player
-
-data GameState = GameState {
-                    _tiles :: [Tile],
-                    _player :: Player,
-                    _redKeyCount :: Int,
-                    _blueKeyCount :: Int,
-                    _yellowKeyCount :: Int,
-                    _hasGreenKey :: Bool,
-                    _ga :: Attributes
-}
-
-makeLenses ''GameState
-deriveMC ''GameState
 
 instance Renderable Tile where
     render (Empty _)      = image "images/empty.png"
@@ -89,8 +73,15 @@ instance Renderable Tile where
     render (GateFinal _)  = image "images/gate_final1.png"
     render (Help _)       = image "images/help.png"
 
-instance Renderable GameState where
-    render gs = displayAll (_tiles gs) <> display (_player gs)
+data Direction = DirUp | DirDown | DirLeft | DirRight
+
+data Player = Player {
+                _direction :: Direction,
+                _ar :: Attributes
+}
+
+makeLenses ''Player
+deriveMC ''Player
 
 instance Renderable Player where
     render p = case p ^. direction of
@@ -98,6 +89,22 @@ instance Renderable Player where
                  DirDown  -> image "images/player_down.png"
                  DirLeft  -> image "images/player_left.png"
                  DirRight -> image "images/player_right.png"
+
+data GameState = GameState {
+                    _tiles :: [Tile],
+                    _player :: Player,
+                    _redKeyCount :: Int,
+                    _blueKeyCount :: Int,
+                    _yellowKeyCount :: Int,
+                    _hasGreenKey :: Bool,
+                    _ga :: Attributes
+}
+
+makeLenses ''GameState
+deriveMC ''GameState
+
+instance Renderable GameState where
+    render gs = displayAll (_tiles gs) <> display (_player gs)
 
 tileMap = 
     [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -136,26 +143,25 @@ upTile gs      = (_tiles gs) !! (currentIdx gs - boardW)
 downTile gs    = (_tiles gs) !! (currentIdx gs + boardW)
 
 renderedTiles = renderTileMap tileMap f (tileSize, tileSize)
-    where f 1 = empty
-          f 2 = wall
-          f 3 = chip
-          f 4 = keyYellow
-          f 5 = keyRed
-          f 6 = keyGreen
-          f 7 = keyBlue
-          f 8 = lockYellow
-          f 9 = lockRed
-          f 10 = lockGreen
-          f 11 = lockBlue
-          f 12 = gate
-          f 13 = gateFinal
-          f 14 = help
+    where f 1 = Empty def
+          f 2 = Wall def
+          f 3 = Chip def
+          f 4 = KeyYellow def
+          f 5 = KeyRed def
+          f 6 = KeyGreen def
+          f 7 = KeyBlue def
+          f 8 = LockYellow def
+          f 9 = LockRed def
+          f 10 = LockGreen def
+          f 11 = LockBlue def
+          f 12 = Gate def
+          f 13 = GateFinal def
+          f 14 = Help def
 
 gameState = GameState renderedTiles (x .~ (8*tileSize) $ y .~ (8*tileSize) $ player_) 0 0 0 False def
         where player_ = (Player DirDown def)
 
 main = run "chips challenge" (boardW * tileSize, boardH * tileSize) gameState on stepGame
-
 
 checkWall func gs newGs = case func gs of
                       Wall _ -> gs
@@ -194,15 +200,15 @@ on _ gs = return $ player.direction .~ DirDown $ gs
 stepGame _ gs = do
     let playerIx = currentIdx gs
     let attrs_ = ((gs ^. tiles) !! playerIx) ^. attrs
-    let reset i = tiles.(ix i) .~ (Empty attrs_) $ gs
+    let resetTile i = tiles.(ix i) .~ (Empty attrs_) $ gs
     case currentTile gs of
-        Chip _ -> return $ reset playerIx
-        KeyYellow _ -> return $ yellowKeyCount +~ 1 $ reset playerIx
-        KeyBlue _ -> return $ blueKeyCount +~ 1 $ reset playerIx
-        KeyGreen _ -> return $ hasGreenKey .~ True $ reset playerIx
-        KeyRed _ -> return $ redKeyCount +~ 1 $ reset playerIx
-        LockYellow _ -> return $ yellowKeyCount -~ 1 $ reset playerIx
-        LockBlue _ -> return $ blueKeyCount -~ 1 $ reset playerIx
-        LockGreen _ -> return $ reset playerIx
-        LockRed _ -> return $ redKeyCount -~ 1 $ reset playerIx
+        Chip _ -> return $ resetTile playerIx
+        KeyYellow _ -> return $ yellowKeyCount +~ 1 $ resetTile playerIx
+        KeyBlue _ -> return $ blueKeyCount +~ 1 $ resetTile playerIx
+        KeyGreen _ -> return $ hasGreenKey .~ True $ resetTile playerIx
+        KeyRed _ -> return $ redKeyCount +~ 1 $ resetTile playerIx
+        LockYellow _ -> return $ yellowKeyCount -~ 1 $ resetTile playerIx
+        LockBlue _ -> return $ blueKeyCount -~ 1 $ resetTile playerIx
+        LockGreen _ -> return $ resetTile playerIx
+        LockRed _ -> return $ redKeyCount -~ 1 $ resetTile playerIx
         _ -> return gs
