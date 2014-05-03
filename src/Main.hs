@@ -10,32 +10,6 @@ import Data.Maybe
 import Codec.Picture hiding (readImage)
 import Codec.Picture.Repa
 import qualified Data.Vector.Unboxed as U
-import Data.IORef
-import ActionKid.Globals
-import qualified Data.Map as M
-import Control.Seq
-import System.IO.Unsafe
-import Graphics.Gloss.Juicy
-
--- | Given a path, loads the image and returns it as a picture. It performs 
--- caching, so if the same path has been given before, it will just return
--- the image from the cache. This makes this function easily usable in 
--- `render`...you don't have to worry about the image getting loaded into 
--- memory multiple times. By my testing, this actually worked, and memory
--- didn't increase. Before the caching, it WAS reading images into memory 
--- multiple times...leading to massive memory use.
-image :: String -> Picture
-image src = case M.lookup src (unsafePerformIO . readIORef $ imageCache) of
-              -- force evaluation of the first part, so the image gets 
-              -- cached in the imageCache, before returning the read image.
-              Nothing -> (unsafePerformIO $ modifyIORef imageCache (M.insert src newPic)) `seq` newPic
-              Just cachedPic -> cachedPic
-    where pic@(Bitmap w h _ _) = fromJust . unsafePerformIO . loadJuicy $ src
-          newPic = translate x y pic
-          x = fromIntegral w / 2
-          y = fromIntegral h / 2
-
-{-# NOINLINE image #-}
 
 tileSize = 32
 

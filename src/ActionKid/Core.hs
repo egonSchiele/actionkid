@@ -19,6 +19,39 @@ import qualified Debug.Trace as D
 import ActionKid.Internal
 import Control.Monad.State
 import Language.Haskell.TH
+import Data.IORef
+import qualified Data.Map as M
+import System.IO.Unsafe
+import Graphics.Gloss.Juicy
+
+-- cacheImage src pic = unsafePerformIO $ do
+--   modifyIORef' imageCache (\cache -> D.trace ("caching: " ++ src) $ M.insert src pic cache)
+--   cache <- readIORef imageCache
+--   putStrLn $ "new cache is: " ++ (show cache)
+--   return pic
+
+-- | Given a path, loads the image and returns it as a picture. It performs 
+-- caching, so if the same path has been given before, it will just return
+-- the image from the cache. This makes this function easily usable in 
+-- `render`...you don't have to worry about the image getting loaded into 
+-- memory multiple times. By my testing, this actually worked, and memory
+-- didn't increase. Before the caching, it WAS reading images into memory 
+-- multiple times...leading to massive memory use.
+image :: String -> Picture
+image src = unsafePerformIO $ do
+    cache <- readIORef imageCache
+    case M.lookup src cache of
+      Nothing -> do
+        modifyIORef' imageCache (M.insert src newPic)
+        return newPic
+      Just cachedPic -> do
+        return cachedPic
+    where pic@(Bitmap w h _ _) = fromJust . unsafePerformIO . loadJuicy $ src
+          newPic = translate x y pic
+          x = fromIntegral w / 2
+          y = fromIntegral h / 2
+
+{-# NOINLINE image #-}
 
 -- This will eventually be a function that takes a tile map png or jpg and
 -- cuts it up into the individual tiles and returns them as a 2-d array.
