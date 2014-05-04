@@ -39,17 +39,20 @@ import Graphics.Gloss.Juicy
 -- multiple times...leading to massive memory use.
 image :: String -> Picture
 image src = unsafePerformIO $ do
-    cache <- readIORef imageCache
-    case M.lookup src cache of
-      Nothing -> do
-        modifyIORef' imageCache (M.insert src newPic)
-        return newPic
-      Just cachedPic -> do
-        return cachedPic
-    where pic@(Bitmap w h _ _) = fromJust . unsafePerformIO . loadJuicy $ src
-          newPic = translate x y pic
-          x = fromIntegral w / 2
-          y = fromIntegral h / 2
+    pic_ <- loadJuicy src
+    case pic_ of
+      Nothing -> error $ "didn't find an image at " ++ src
+      Just pic@(Bitmap w h _ _) -> do
+        let x = fromIntegral w / 2
+            y = fromIntegral h / 2
+            newPic = translate x y pic
+        cache <- readIORef imageCache
+        case M.lookup src cache of
+          Nothing -> do
+            modifyIORef' imageCache (M.insert src newPic)
+            return newPic
+          Just cachedPic -> do
+            return cachedPic
 
 {-# NOINLINE image #-}
 
