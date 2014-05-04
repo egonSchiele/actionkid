@@ -26,7 +26,7 @@ data Attributes = Attributes {
                     -- the `displayAll` function, you have to handle
                     -- zindex yourself!
                     _azindex :: Int
-} deriving Show
+} deriving (Show, Eq)
 
 makeLenses ''Attributes
 
