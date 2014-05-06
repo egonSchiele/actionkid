@@ -242,6 +242,7 @@ run title (w,h) state keyHandler stepFunc = do
     draw
     keyHandler
     (onEnterFrame stepFunc)
+  reshapeCallback $= (Just (\_ -> putStrLn "resized"))
 
 
 -- | Convenience function. Given a list of movie clips,
