@@ -31,8 +31,10 @@ import Foreign.ForeignPtr
 import System.Cmd
 import Graphics.Rendering.OpenGL.GL.StateVar
 
+-- | Given a path to an audio file, plays the file.
+-- Needs some love...either SDL is buggy or I don't understand it...
 playSound :: String -> Bool -> IO ()
-playSound src loop = do
+playSound src loopSound = do
   let audioRate     = 22050
       audioFormat   = Mix.AudioS16LSB
       audioChannels = 2
@@ -57,6 +59,8 @@ playSound src loop = do
       when (stillPlaying /= 0) loop
     Mix.closeAudio
     SDL.quit
+    when loopSound $
+      playSound src loopSound
     return ()
   return ()
 
