@@ -15,7 +15,7 @@ import System.Posix.Process
 import Control.Monad
 
 tileSize = 32
-soundDir = "/Users/adit/haskell/actionkid/sounds/"
+soundDir = "sounds/"
 
 data Tile = Empty Attributes
           | Wall  Attributes
