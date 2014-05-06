@@ -15,3 +15,13 @@ But now, when I close the window, the sound still keeps playing! I don't know wh
 So in summary, audio is a giant pain.
 
 ...And we're back. I couldn't figure out the issue with sounds, and then Leaf pointed out that this library is now totally UN-portable...I require all my users to have mpg123 (which I already knew). So I tried going back to SDL. I added a threaddelay before I do anything else, and now it somehow magically works. WTF.
+
+And now I've started getting this error:
+
+    actionkid(7549,0x10e5cb000) malloc: *** error for object 0x7fa808419570: pointer being freed was not allocated
+    *** set a breakpoint in malloc_error_break to debug
+    actionkid(7549,0x105004000) malloc: *** error for object 0x7fa808419570: pointer being freed was not allocated
+    *** set a breakpoint in malloc_error_break to debug
+    Abort trap: 6
+
+...this is bullshit.

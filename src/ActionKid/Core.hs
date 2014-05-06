@@ -48,10 +48,10 @@ playSound src loop = do
     putStrLn $ "playing: " ++ src
     SDL.init [SDL.InitAudio]
     result <- openAudio audioRate audioFormat audioChannels audioBuffers
-    adios <- Mix.loadWAV src
-    Mix.playChannel anyChannel adios 0
+    audioData <- Mix.loadWAV src
+    Mix.playChannel anyChannel audioData 0
     fix $ \loop -> do
-      touchForeignPtr adios
+      touchForeignPtr audioData
       threadDelay 500000
       stillPlaying <- numChannelsPlaying
       when (stillPlaying /= 0) loop
