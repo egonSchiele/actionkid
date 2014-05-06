@@ -3,6 +3,7 @@ import Data.IORef
 import System.IO.Unsafe
 import qualified Data.Map as M
 import qualified Graphics.Gloss as G
+import Control.Concurrent
 
 -- | Global variable to set board width
 boardWidth :: IORef Int
@@ -15,3 +16,7 @@ boardHeight = unsafePerformIO $ newIORef 0
 -- | Global variable to cache game images
 imageCache :: IORef (M.Map String G.Picture)
 imageCache = unsafePerformIO $ newIORef M.empty
+
+-- | Global variable to cache game images
+threads :: IORef [ThreadId]
+threads = unsafePerformIO $ newIORef []

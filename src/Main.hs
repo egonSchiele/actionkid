@@ -10,7 +10,8 @@ import Data.Maybe
 import Codec.Picture hiding (readImage)
 import Codec.Picture.Repa
 import qualified Data.Vector.Unboxed as U
-
+import System.Exit
+import System.Posix.Process
 tileSize = 32
 
 data Tile = Empty Attributes
@@ -135,53 +136,77 @@ renderedTiles = renderTileMap tileMap f (tileSize, tileSize)
 gameState = GameState renderedTiles (x .~ (8*tileSize) $ y .~ (8*tileSize) $ player_) 0 0 0 False def
         where player_ = (Player DirDown def)
 
-main = run "chips challenge" (9 * tileSize, 9 * tileSize) (x -~ (4*tileSize) $ y -~ (4*tileSize) $ gameState) on stepGame
+main = do
+    playSound "/Users/adit/haskell/actionkid/sounds/chips.mp3"
+    run "chips challenge" (9 * tileSize, 9 * tileSize) (x -~ (4*tileSize) $ y -~ (4*tileSize) $ gameState) on stepGame
 
 chipsLeft gs = length $ filter isChip (_tiles gs)
   where isChip (Chip _) = True
         isChip _        = False
 
-maybeMove :: (GameState -> Tile) -> GameState -> GameState -> GameState
+oof :: IO ()
+oof = do
+    playSound "/Users/adit/haskell/actionkid/sounds/oof.mp3"
+    return ()
+
+maybeMove :: (GameState -> Tile) -> GameState -> GameState -> IO GameState
 maybeMove func gs newGs =
     case func gs of
-      Wall _ -> gs
-      LockRed _    -> if _redKeyCount gs > 0 then newGs else gs
-      LockBlue _   -> if _blueKeyCount gs > 0 then newGs else gs
-      LockGreen _  -> if _hasGreenKey gs then newGs else gs
-      LockYellow _ -> if _yellowKeyCount gs > 0 then newGs else gs
-      Gate _       -> if chipsLeft gs == 0 then newGs else gs
-      _ -> newGs
+      Wall _ -> do
+        oof
+        return gs
+      LockRed _    -> if _redKeyCount gs > 0
+                        then return newGs
+                        else oof >> return gs
+      LockBlue _   -> if _blueKeyCount gs > 0
+                        then return newGs
+                        else oof >> return gs
+      LockGreen _  -> if _hasGreenKey gs
+                        then return newGs
+                        else oof >> return gs
+      LockYellow _ -> if _yellowKeyCount gs > 0
+                        then return newGs
+                        else oof >> return gs
+      Gate _       -> if chipsLeft gs == 0
+                        then return newGs
+                        else oof >> return gs
+      _ -> return newGs
 
-on (EventKey (SpecialKey KeyLeft) Down _ _) gs =
-    return $ maybeMove leftTile gs $ 
-      player.direction .~ DirLeft
-      $ player.x -~ tileSize
-      $ x +~ tileSize
-      $ gs
+on (EventKey (SpecialKey KeyLeft) Down _ _) gs = do
+      maybeMove leftTile gs $ 
+        player.direction .~ DirLeft
+        $ player.x -~ tileSize
+        $ x +~ tileSize
+        $ gs
 
 on (EventKey (SpecialKey KeyRight) Down _ _) gs =
-    return $ maybeMove rightTile gs $
-      player.direction .~ DirRight
-      $ player.x +~ tileSize
-      $ x -~ tileSize
-      $ gs
+      maybeMove rightTile gs $
+        player.direction .~ DirRight
+        $ player.x +~ tileSize
+        $ x -~ tileSize
+        $ gs
 
 on (EventKey (SpecialKey KeyUp) Down _ _) gs =
-    return $ maybeMove upTile gs $
-      player.direction .~ DirUp
-      $ player.y +~ tileSize
-      $ y -~ tileSize
-      $ gs
+      maybeMove upTile gs $
+        player.direction .~ DirUp
+        $ player.y +~ tileSize
+        $ y -~ tileSize
+        $ gs
 
 on (EventKey (SpecialKey KeyDown) Down _ _) gs =
-    return $ maybeMove downTile gs $
-      player.direction .~ DirDown
-      $ player.y -~ tileSize
-      $ y +~ tileSize
-      $ gs
+      maybeMove downTile gs $
+        player.direction .~ DirDown
+        $ player.y -~ tileSize
+        $ y +~ tileSize
+        $ gs
 
-on (EventKey (SpecialKey KeySpace) Down _ _) gs =
-    return gameState
+on (EventKey (SpecialKey KeySpace) Down _ _) gs = do
+    killForkedThreads
+    exitImmediately ExitSuccess
+    return gs
+    -- exitSuccess
+    
+
 on _ gs =
     return $ player.direction .~ DirDown $ gs
 
