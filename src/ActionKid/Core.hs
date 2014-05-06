@@ -52,10 +52,12 @@ killForkedThreads = do
     print ts
     mapM_ killThread ts
 
-playSound :: String -> IO ()
-playSound src = do
+playSound :: String -> Bool -> IO ()
+playSound src loop = do
     forkAndTrack $ do
-      system $ "mpg123 " ++ src
+      if loop
+        then system $ "mpg123 --loop -1 " ++ src
+        else system $ "mpg123 " ++ src
       return ()
     return ()
 
@@ -242,7 +244,6 @@ run title (w,h) state keyHandler stepFunc = do
     draw
     keyHandler
     (onEnterFrame stepFunc)
-  reshapeCallback $= (Just (\_ -> putStrLn "resized"))
 
 
 -- | Convenience function. Given a list of movie clips,

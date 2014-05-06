@@ -12,7 +12,10 @@ import Codec.Picture.Repa
 import qualified Data.Vector.Unboxed as U
 import System.Exit
 import System.Posix.Process
+import Control.Monad
+
 tileSize = 32
+soundDir = "/Users/adit/haskell/actionkid/sounds/"
 
 data Tile = Empty Attributes
           | Wall  Attributes
@@ -137,7 +140,7 @@ gameState = GameState renderedTiles (x .~ (8*tileSize) $ y .~ (8*tileSize) $ pla
         where player_ = (Player DirDown def)
 
 main = do
-    playSound "/Users/adit/haskell/actionkid/sounds/chips.mp3"
+    playSound (soundDir ++ "chips02.mp3") True
     run "chips challenge" (9 * tileSize, 9 * tileSize) (x -~ (4*tileSize) $ y -~ (4*tileSize) $ gameState) on stepGame
 
 chipsLeft gs = length $ filter isChip (_tiles gs)
@@ -145,9 +148,7 @@ chipsLeft gs = length $ filter isChip (_tiles gs)
         isChip _        = False
 
 oof :: IO ()
-oof = do
-    playSound "/Users/adit/haskell/actionkid/sounds/oof.mp3"
-    return ()
+oof = playSound (soundDir ++ "oof.mp3") False
 
 maybeMove :: (GameState -> Tile) -> GameState -> GameState -> IO GameState
 maybeMove func gs newGs =
@@ -215,14 +216,24 @@ stepGame _ gs = do
     let attrs_ = ((gs ^. tiles) !! playerIx) ^. attrs
     let resetTile i = tiles.(ix i) .~ (Empty attrs_) $ gs
     case currentTile gs of
-      Chip _ -> return $ resetTile playerIx
+      Chip _ -> do
+        playSound (soundDir ++ "collect_chip.mp3") False
+        return $ resetTile playerIx
       Gate _ -> return $ resetTile playerIx
       KeyYellow _ -> return $ yellowKeyCount +~ 1 $ resetTile playerIx
       KeyBlue _ -> return $ blueKeyCount +~ 1 $ resetTile playerIx
       KeyGreen _ -> return $ hasGreenKey .~ True $ resetTile playerIx
       KeyRed _ -> return $ redKeyCount +~ 1 $ resetTile playerIx
-      LockYellow _ -> return $ yellowKeyCount -~ 1 $ resetTile playerIx
-      LockBlue _ -> return $ blueKeyCount -~ 1 $ resetTile playerIx
-      LockGreen _ -> return $ resetTile playerIx
-      LockRed _ -> return $ redKeyCount -~ 1 $ resetTile playerIx
+      LockYellow _ -> do
+        playSound (soundDir ++ "door.mp3") False
+        return $ yellowKeyCount -~ 1 $ resetTile playerIx
+      LockBlue _ -> do
+        playSound (soundDir ++ "door.mp3") False
+        return $ blueKeyCount -~ 1 $ resetTile playerIx
+      LockGreen _ -> do
+        playSound (soundDir ++ "door.mp3") False
+        return $ resetTile playerIx
+      LockRed _ -> do
+        playSound (soundDir ++ "door.mp3") False
+        return $ redKeyCount -~ 1 $ resetTile playerIx
       _ -> return gs
