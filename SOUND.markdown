@@ -13,3 +13,5 @@ Then I decided to use a third-party command line app. I just used backticks to `
 So now I could do both audio and graphics in parallel, and move the guy around. And I could even play multiple audio files at the same time, which was awesome.
 But now, when I close the window, the sound still keeps playing! I don't know why...when the main thread dies, all forked threads are supposed to die. But not in this case. Still can't figure it out.
 So in summary, audio is a giant pain.
+
+...And we're back. I couldn't figure out the issue with sounds, and then Leaf pointed out that this library is now totally UN-portable...I require all my users to have mpg123 (which I already knew). So I tried going back to SDL. I added a threaddelay before I do anything else, and now it somehow magically works. WTF.

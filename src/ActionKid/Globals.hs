@@ -16,7 +16,3 @@ boardHeight = unsafePerformIO $ newIORef 0
 -- | Global variable to cache game images
 imageCache :: IORef (M.Map String G.Picture)
 imageCache = unsafePerformIO $ newIORef M.empty
-
--- | Global variable to cache game images
-threads :: IORef [ThreadId]
-threads = unsafePerformIO $ newIORef []

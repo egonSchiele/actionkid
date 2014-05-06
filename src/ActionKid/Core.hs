@@ -29,57 +29,36 @@ import Graphics.UI.SDL.Mixer as Mix
 import Control.Concurrent
 import Foreign.ForeignPtr
 import System.Cmd
-import System.Exit
-import System.Posix.Signals
-import Graphics.UI.GLUT.Callbacks.Window
-import qualified Graphics.UI.GLUT as GLUT
 import Graphics.Rendering.OpenGL.GL.StateVar
-
--- Convenience function that executes the given task in a separate thread,
--- and tracks the thread in a global var. When the program exits, all these
--- threads will get killed. Used for example to play sounds, so that when
--- we quit the sounds dont keep playing.
-forkAndTrack :: IO () -> IO ThreadId
-forkAndTrack func = do
-    tid <- forkOS func
-    modifyIORef threads (tid:)
-    return tid
-
-killForkedThreads :: IO ()
-killForkedThreads = do
-    putStrLn "killing threads..."
-    ts <- readIORef threads
-    print ts
-    mapM_ killThread ts
 
 playSound :: String -> Bool -> IO ()
 playSound src loop = do
-    forkAndTrack $ do
-      if loop
-        then system $ "mpg123 --loop -1 " ++ src
-        else system $ "mpg123 " ++ src
-      return ()
+  let audioRate     = 22050
+      audioFormat   = Mix.AudioS16LSB
+      audioChannels = 2
+      audioBuffers  = 4096
+      anyChannel    = (-1)
+    
+  forkOS $ do
+    -- Don't ask why this is needed. If it isn't there, somehow
+    -- this audio thread blocks all other execution, and you can't
+    -- do anything else. But introducing it somehow prevents that.
+    -- WTF.
+    threadDelay 5000
+    putStrLn $ "playing: " ++ src
+    SDL.init [SDL.InitAudio]
+    result <- openAudio audioRate audioFormat audioChannels audioBuffers
+    adios <- Mix.loadWAV src
+    Mix.playChannel anyChannel adios 0
+    fix $ \loop -> do
+      touchForeignPtr adios
+      threadDelay 500000
+      stillPlaying <- numChannelsPlaying
+      when (stillPlaying /= 0) loop
+    Mix.closeAudio
+    SDL.quit
     return ()
-
--- playAudio src = forkOS $ do
---   putStrLn $ "playing: " ++ src
---   SDL.init [SDL.InitAudio]
---   result <- openAudio audioRate audioFormat audioChannels audioBuffers
---   adios <- Mix.loadWAV src
---   Mix.playChannel anyChannel adios 0
---   fix $ \loop -> do
---     touchForeignPtr adios
---     threadDelay 500
---     stillPlaying <- numChannelsPlaying
---     when (stillPlaying /= 0) loop
---   Mix.closeAudio
---   SDL.quit
-
---   where audioRate     = 22050
---         audioFormat   = Mix.AudioS16LSB
---         audioChannels = 2
---         audioBuffers  = 4096
---         anyChannel    = (-1)
+  return ()
 
 -- cacheImage src pic = unsafePerformIO $ do
 --   modifyIORef' imageCache (\cache -> D.trace ("caching: " ++ src) $ M.insert src pic cache)
@@ -230,7 +209,6 @@ hits a b = f a `intersects` f b
 -- 5. a step function (onEnterFrame)
 run :: (MovieClip a, Renderable a) => String -> (Int, Int) -> a -> (Event -> a -> IO a) -> (Float -> a -> IO a) -> IO ()
 run title (w,h) state keyHandler stepFunc = do
-  installHandler sigABRT (Catch killForkedThreads) Nothing
   boardWidth $= w
   boardHeight $= h
   playIO
