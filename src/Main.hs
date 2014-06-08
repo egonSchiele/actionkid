@@ -173,64 +173,62 @@ maybeMove func gs newGs =
                         else oof >> return gs
       _ -> return newGs
 
-on (EventKey (SpecialKey KeyLeft) Down _ _) gs = do
-      maybeMove leftTile gs $ 
-        player.direction .~ DirLeft
-        $ player.x -~ tileSize
-        $ x +~ tileSize
-        $ gs
+-- on (EventKey (SpecialKey KeyLeft) Down _ _) gs = do
+--       maybeMove leftTile gs $ 
+--         player.direction .~ DirLeft
+--         $ player.x -~ tileSize
+--         $ x +~ tileSize
+--         $ gs
 
-on (EventKey (SpecialKey KeyRight) Down _ _) gs =
-      maybeMove rightTile gs $
-        player.direction .~ DirRight
-        $ player.x +~ tileSize
-        $ x -~ tileSize
-        $ gs
+-- on (EventKey (SpecialKey KeyRight) Down _ _) gs =
+--       maybeMove rightTile gs $
+--         player.direction .~ DirRight
+--         $ player.x +~ tileSize
+--         $ x -~ tileSize
+--         $ gs
 
-on (EventKey (SpecialKey KeyUp) Down _ _) gs =
-      maybeMove upTile gs $
-        player.direction .~ DirUp
-        $ player.y +~ tileSize
-        $ y -~ tileSize
-        $ gs
+-- on (EventKey (SpecialKey KeyUp) Down _ _) gs =
+--       maybeMove upTile gs $
+--         player.direction .~ DirUp
+--         $ player.y +~ tileSize
+--         $ y -~ tileSize
+--         $ gs
 
-on (EventKey (SpecialKey KeyDown) Down _ _) gs =
-      maybeMove downTile gs $
-        player.direction .~ DirDown
-        $ player.y -~ tileSize
-        $ y +~ tileSize
-        $ gs
+-- on (EventKey (SpecialKey KeyDown) Down _ _) gs =
+--       maybeMove downTile gs $
+--         player.direction .~ DirDown
+--         $ player.y -~ tileSize
+--         $ y +~ tileSize
+--         $ gs
 
-on (EventKey (SpecialKey KeySpace) Down _ _) gs = do
-    return gs
+-- on (EventKey (SpecialKey KeySpace) Down _ _) gs = do
+--     return gs
     
+on _ = player.direction .= DirDown
 
-on _ gs =
-    return $ player.direction .~ DirDown $ gs
-
-stepGame _ gs = do
-    let playerIx = currentIdx gs
-    let attrs_ = ((gs ^. tiles) !! playerIx) ^. attrs
-    let resetTile i = tiles.(ix i) .~ (Empty attrs_) $ gs
-    case currentTile gs of
-      Chip _ -> do
-        playSound (soundDir ++ "collect_chip.wav") False
-        return $ resetTile playerIx
-      Gate _ -> return $ resetTile playerIx
-      KeyYellow _ -> return $ yellowKeyCount +~ 1 $ resetTile playerIx
-      KeyBlue _ -> return $ blueKeyCount +~ 1 $ resetTile playerIx
-      KeyGreen _ -> return $ hasGreenKey .~ True $ resetTile playerIx
-      KeyRed _ -> return $ redKeyCount +~ 1 $ resetTile playerIx
-      LockYellow _ -> do
-        playSound (soundDir ++ "door.wav") False
-        return $ yellowKeyCount -~ 1 $ resetTile playerIx
-      LockBlue _ -> do
-        playSound (soundDir ++ "door.wav") False
-        return $ blueKeyCount -~ 1 $ resetTile playerIx
-      LockGreen _ -> do
-        playSound (soundDir ++ "door.wav") False
-        return $ resetTile playerIx
-      LockRed _ -> do
-        playSound (soundDir ++ "door.wav") False
-        return $ redKeyCount -~ 1 $ resetTile playerIx
-      _ -> return gs
+stepGame _ = return ()
+    -- let playerIx = currentIdx gs
+    -- let attrs_ = ((gs ^. tiles) !! playerIx) ^. attrs
+    -- let resetTile i = tiles.(ix i) .~ (Empty attrs_) $ gs
+    -- case currentTile gs of
+    --   Chip _ -> do
+    --     playSound (soundDir ++ "collect_chip.wav") False
+    --     return $ resetTile playerIx
+    --   Gate _ -> return $ resetTile playerIx
+    --   KeyYellow _ -> return $ yellowKeyCount +~ 1 $ resetTile playerIx
+    --   KeyBlue _ -> return $ blueKeyCount +~ 1 $ resetTile playerIx
+    --   KeyGreen _ -> return $ hasGreenKey .~ True $ resetTile playerIx
+    --   KeyRed _ -> return $ redKeyCount +~ 1 $ resetTile playerIx
+    --   LockYellow _ -> do
+    --     playSound (soundDir ++ "door.wav") False
+    --     return $ yellowKeyCount -~ 1 $ resetTile playerIx
+    --   LockBlue _ -> do
+    --     playSound (soundDir ++ "door.wav") False
+    --     return $ blueKeyCount -~ 1 $ resetTile playerIx
+    --   LockGreen _ -> do
+    --     playSound (soundDir ++ "door.wav") False
+    --     return $ resetTile playerIx
+    --   LockRed _ -> do
+    --     playSound (soundDir ++ "door.wav") False
+    --     return $ redKeyCount -~ 1 $ resetTile playerIx
+    --   _ -> return gs

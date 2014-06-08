@@ -208,10 +208,10 @@ hits a b = f a `intersects` f b
 --
 -- 3. Game state (a MovieClip)
 --
--- 4. a key handler function (exactly the same as Gloss)
+-- 4. a key handler function
 --
 -- 5. a step function (onEnterFrame)
-run :: (MovieClip a, Renderable a) => String -> (Int, Int) -> a -> (Event -> a -> IO a) -> (Float -> a -> IO a) -> IO ()
+run :: (MovieClip a, Renderable a) => String -> (Int, Int) -> a -> (Event -> StateT a IO ()) -> (Float -> StateT a IO ()) -> IO ()
 run title (w,h) state keyHandler stepFunc = do
   boardWidth $= w
   boardHeight $= h
@@ -220,12 +220,9 @@ run title (w,h) state keyHandler stepFunc = do
     white
     30
     state
-    -- this could be done through a pre-defined function too...
-    -- just need to make the gamestate be a global var that is always
-    -- a list of elements to display
     draw
-    keyHandler
-    (onEnterFrame stepFunc)
+    (\k gs -> execStateT (keyHandler k) gs)
+    (\i gs -> execStateT (stepFunc i) gs)
 
 
 -- | Convenience function. Given a list of movie clips,
