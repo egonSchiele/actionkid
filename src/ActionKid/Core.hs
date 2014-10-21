@@ -47,7 +47,6 @@ playSound src loopSound = do
     -- do anything else. But introducing it somehow prevents that.
     -- WTF.
     threadDelay 5000
-    putStrLn $ "playing: " ++ src
     SDL.init [SDL.InitAudio]
     result <- openAudio audioRate audioFormat audioChannels audioBuffers
     audioData <- Mix.loadWAV src
