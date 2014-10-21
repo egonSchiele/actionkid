@@ -24,8 +24,6 @@ import System.IO.Unsafe
 import Graphics.Gloss.Juicy
 import Control.Monad
 import Control.Monad.Fix
-import Graphics.UI.SDL as SDL hiding (Event, with)
-import Graphics.UI.SDL.Mixer as Mix
 import Control.Concurrent
 import Foreign.ForeignPtr
 import System.Cmd
@@ -34,34 +32,35 @@ import Graphics.Rendering.OpenGL.GL.StateVar
 -- | Given a path to an audio file, plays the file.
 -- Needs some love...either SDL is buggy or I don't understand it...
 playSound :: String -> Bool -> IO ()
-playSound src loopSound = do
-  let audioRate     = 22050
-      audioFormat   = Mix.AudioS16LSB
-      audioChannels = 2
-      audioBuffers  = 4096
-      anyChannel    = (-1)
-    
-  forkOS $ do
-    -- Don't ask why this is needed. If it isn't there, somehow
-    -- this audio thread blocks all other execution, and you can't
-    -- do anything else. But introducing it somehow prevents that.
-    -- WTF.
-    threadDelay 5000
-    SDL.init [SDL.InitAudio]
-    result <- openAudio audioRate audioFormat audioChannels audioBuffers
-    audioData <- Mix.loadWAV src
-    Mix.playChannel anyChannel audioData 0
-    fix $ \loop -> do
-      touchForeignPtr audioData
-      threadDelay 500000
-      stillPlaying <- numChannelsPlaying
-      when (stillPlaying /= 0) loop
-    Mix.closeAudio
-    SDL.quit
-    when loopSound $
-      playSound src loopSound
-    return ()
-  return ()
+playSound src loopSound = return ()
+-- playSound src loopSound = do
+--   let audioRate     = 22050
+--       audioFormat   = Mix.AudioS16LSB
+--       audioChannels = 2
+--       audioBuffers  = 4096
+--       anyChannel    = (-1)
+
+--   forkOS $ do
+--     -- Don't ask why this is needed. If it isn't there, somehow
+--     -- this audio thread blocks all other execution, and you can't
+--     -- do anything else. But introducing it somehow prevents that.
+--     -- WTF.
+--     threadDelay 5000
+--     SDL.init [SDL.InitAudio]
+--     result <- openAudio audioRate audioFormat audioChannels audioBuffers
+--     audioData <- Mix.loadWAV src
+--     Mix.playChannel anyChannel audioData 0
+--     fix $ \loop -> do
+--       touchForeignPtr audioData
+--       threadDelay 500000
+--       stillPlaying <- numChannelsPlaying
+--       when (stillPlaying /= 0) loop
+--     Mix.closeAudio
+--     SDL.quit
+--     when loopSound $
+--       playSound src loopSound
+--     return ()
+--   return ()
 
 -- cacheImage src pic = unsafePerformIO $ do
 --   modifyIORef' imageCache (\cache -> D.trace ("caching: " ++ src) $ M.insert src pic cache)
@@ -69,12 +68,12 @@ playSound src loopSound = do
 --   putStrLn $ "new cache is: " ++ (show cache)
 --   return pic
 
--- | Given a path, loads the image and returns it as a picture. It performs 
+-- | Given a path, loads the image and returns it as a picture. It performs
 -- caching, so if the same path has been given before, it will just return
--- the image from the cache. This makes this function easily usable in 
--- `render`...you don't have to worry about the image getting loaded into 
+-- the image from the cache. This makes this function easily usable in
+-- `render`...you don't have to worry about the image getting loaded into
 -- memory multiple times. By my testing, this actually worked, and memory
--- didn't increase. Before the caching, it WAS reading images into memory 
+-- didn't increase. Before the caching, it WAS reading images into memory
 -- multiple times...leading to massive memory use.
 image :: String -> Picture
 image src = unsafePerformIO $ do
@@ -102,7 +101,7 @@ image src = unsafePerformIO $ do
 -- http://www.haskell.org/haskellwiki/Numeric_Haskell:_A_Repa_Tutorial#Indexing_arrays
 -- http://hackage.haskell.org/package/repa-3.2.3.3/docs/Data-Array-Repa.html#t:Array
 -- loadTileMap :: String -> Int -> Int -> [[Picture]]
--- loadTileMap src w h = 
+-- loadTileMap src w h =
 --    where image = (fromRight . unsafePerformIO . readImage $ src) :: Img RGBA
 --          vec   = toUnboxed image
 
@@ -110,11 +109,11 @@ image src = unsafePerformIO $ do
 -- vec :: U.Vector GHC.Word.Word8
 --
 -- vec U.! 14 => gives you a number (word8)
--- U.length vec == 4096 (4 channels, RGBA, so really 1024...and it's 
+-- U.length vec == 4096 (4 channels, RGBA, so really 1024...and it's
 -- a 32x32 image. 32x32 = 1024).
 
 
--- | Here's the kind of thing this renders. Suppse you have a data type 
+-- | Here's the kind of thing this renders. Suppse you have a data type
 -- like so:
 --
 -- > data Tile = Empty { _ea :: Attributes } | Wall  { _wa :: Attributes } | Chip  { _ca :: Attributes }
@@ -131,13 +130,13 @@ image src = unsafePerformIO $ do
 --                                  Wall  _ -> Wall  new
 --                                  Chip  _ -> Chip  new
 --
--- The `viewer` function allows you to access attributes. The `mutator` 
--- function allows you to update the attributes. These are used by the 
+-- The `viewer` function allows you to access attributes. The `mutator`
+-- function allows you to update the attributes. These are used by the
 -- MovieClip class so you can write stuff like `player ^. x` or `player.x +~ 10`
 deriveMC :: Name -> Q [Dec]
 deriveMC name = do
     TyConI (DataD _ _ _ records _) <- reify name
- 
+
     -- The following answers helped a lot:
     -- http://stackoverflow.com/questions/8469044/template-haskell-with-record-field-name-as-variable
     -- http://stackoverflow.com/questions/23400203/multiple-function-definitions-with-template-haskell

@@ -84,7 +84,7 @@ deriveMC ''GameState
 instance Renderable GameState where
     render gs = displayAll (_tiles gs) <> display (_player gs)
 
-tileMap = 
+tileMap =
     [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
      [1, 1, 1, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 1, 1, 1],
      [1, 1, 1, 2, 1, 1, 1, 2, 2, 2, 1, 1, 1, 2, 1, 1, 1],
@@ -174,7 +174,7 @@ maybeMove func gs newGs =
       _ -> return newGs
 
 -- on (EventKey (SpecialKey KeyLeft) Down _ _) gs = do
---       maybeMove leftTile gs $ 
+--       maybeMove leftTile gs $
 --         player.direction .~ DirLeft
 --         $ player.x -~ tileSize
 --         $ x +~ tileSize
@@ -203,7 +203,7 @@ maybeMove func gs newGs =
 
 -- on (EventKey (SpecialKey KeySpace) Down _ _) gs = do
 --     return gs
-    
+
 on _ = player.direction .= DirDown
 
 stepGame _ = return ()
