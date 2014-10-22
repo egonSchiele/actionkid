@@ -13,19 +13,19 @@ build-type:          Simple
 cabal-version:       >=1.8
 
 executable actionkid
-  build-depends:       base ==4.6.*, gloss, StateVar, lens, gloss-juicy, mtl, template-haskell, JuicyPixels ==3.1.*, JuicyPixels-repa ==0.7, containers ==0.5.0.*, OpenGL ==2.8.0.*
+  build-depends:       base >=4.6 && <5, gloss, StateVar, lens, gloss-juicy, mtl, template-haskell, containers >=0.5.0 && <0.6, OpenGL >=2.8.0 && <2.10
   hs-source-dirs:      src
   main-is: Main.hs
   ghc-options: -rtsopts -threaded "-with-rtsopts=-M500m -N"
 
 Test-Suite test-actionkid
   type:       exitcode-stdio-1.0
-  build-depends:       base ==4.6.*, hspec, ActionKid
-  hs-source-dirs:      spec, src
+  build-depends:       base >=4.6 && <5, hspec, ActionKid
+  hs-source-dirs:      spec
   main-is:             Main.hs
 
 library
-  build-depends:       base ==4.6.*, gloss, StateVar, lens, gloss-juicy, mtl, template-haskell, JuicyPixels ==3.1.*, JuicyPixels-repa ==0.7, containers ==0.5.0.*, OpenGL ==2.8.0.*
+  build-depends:       base >=4.6 && <5, gloss, StateVar, lens, gloss-juicy, mtl, template-haskell, containers >=0.5.0 && <0.6, OpenGL >=2.8.0 && <2.10
   exposed-modules:     ActionKid, ActionKid.Types, ActionKid.Core, ActionKid.Utils
   hs-source-dirs:      src
   Other-modules:       ActionKid.Internal, ActionKid.Globals
