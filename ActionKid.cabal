@@ -18,11 +18,6 @@ executable actionkid
   main-is: Main.hs
   ghc-options: -rtsopts -threaded "-with-rtsopts=-M500m -N"
 
--- Note: if you see an error message like:
--- unknown symbol `dominionzm0zi1zi0zi3_DominionziCardsziIntrigue_intrigueCards_closure'
--- ghc: unable to load package `dominion-0.1.0.3'
--- It means that you haven't added a module to your exposed-modules list.
-
 Test-Suite test-actionkid
   type:       exitcode-stdio-1.0
   build-depends:       base ==4.6.*, hspec, ActionKid

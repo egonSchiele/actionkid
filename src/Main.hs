@@ -1,234 +1,133 @@
 {-# LANGUAGE TemplateHaskell, NoMonomorphismRestriction #-}
 {-# OPTIONS_GHC -fno-full-laziness -fno-cse #-}
 import ActionKid
-import Data.Monoid ((<>), mconcat)
 import ActionKid.Utils
 import Control.Lens
-import Graphics.Gloss hiding (display)
-import qualified Debug.Trace as D
-import Data.Maybe
-import Codec.Picture hiding (readImage)
-import Codec.Picture.Repa
-import qualified Data.Vector.Unboxed as U
-import System.Exit
-import System.Posix.Process
-import Control.Monad
+import Control.Monad.State
 
-tileSize = 32
-soundDir = "sounds/"
+-- This is an example of how to use ActionKid to make games with Haskell.
+-- ActionKid is inspired by Actionscript, so you will see some differences.
+--
+-- Every video game has some objects on the screen that interact with each
+-- other. For example, in a game of Mario, you will have Mario himself,
+-- goombas, mushrooms, pipes etc. These objects are called "movie clip"s in
+-- ActionKid terminology. Any data type that is an instance of the
+-- MovieClip class can be used in your game.
 
-data Tile = Empty Attributes
-          | Wall  Attributes
-          | Chip  Attributes
-          | KeyYellow Attributes
-          | KeyRed Attributes
-          | KeyGreen Attributes
-          | KeyBlue Attributes
-          | LockYellow Attributes
-          | LockRed Attributes
-          | LockGreen Attributes
-          | LockBlue Attributes
-          | Gate Attributes
-          | GateFinal Attributes
-          | Help Attributes
-          deriving (Show, Eq)
+-- So first, make a data type for every object you will have in your game.
+-- In this demo game, we just have a player that will move around.
+--
+-- Every constructor must have `Attributes` as it's last field.
+data Player = Player { _pa :: Attributes }
 
-deriveMC ''Tile
-
-instance Renderable Tile where
-    render (Empty _)      = image "images/empty.png"
-    render (Wall _)       = image "images/wall.png"
-    render (Chip _)       = image "images/chip.png"
-    render (KeyYellow _)  = image "images/key_yellow.png"
-    render (KeyRed _)     = image "images/key_red.png"
-    render (KeyGreen _)   = image "images/key_green.png"
-    render (KeyBlue _)    = image "images/key_blue.png"
-    render (LockYellow _) = image "images/lock_yellow.png"
-    render (LockRed _)    = image "images/lock_red.png"
-    render (LockGreen _)  = image "images/lock_green.png"
-    render (LockBlue _)   = image "images/lock_blue.png"
-    render (Gate _)       = image "images/gate.png"
-    render (GateFinal _)  = image "images/gate_final1.png"
-    render (Help _)       = image "images/help.png"
-
-data Direction = DirUp | DirDown | DirLeft | DirRight
-
-data Player = Player {
-                _direction :: Direction,
-                _ar :: Attributes
-}
-
-makeLenses ''Player
+-- Ok, you have a Player type. Now before you can use it in your game,
+-- make it an instance of MovieClip. You can do this automatically with
+-- `deriveMC`:
 deriveMC ''Player
 
-instance Renderable Player where
-    render p = case p ^. direction of
-                 DirUp    -> image "images/player_up.png"
-                 DirDown  -> image "images/player_down.png"
-                 DirLeft  -> image "images/player_left.png"
-                 DirRight -> image "images/player_right.png"
+-- Now that the player is a MovieClip, you can write code like this:
+--
+-- > player.x += 10
+--
+-- and the player will move 10 pixels to the right!
+-- More on this later.
 
+-- You also need a data type that will be the game state.
 data GameState = GameState {
-                    _tiles :: [Tile],
                     _player :: Player,
-                    _redKeyCount :: Int,
-                    _blueKeyCount :: Int,
-                    _yellowKeyCount :: Int,
-                    _hasGreenKey :: Bool,
                     _ga :: Attributes
 }
 
-makeLenses ''GameState
+-- Use this convenience function to make MovieClip instances
+-- for your data types automatically.
 deriveMC ''GameState
 
+-- Next, I suggest you make lenses for all of your data types.
+-- If you don't know how lenses work, check out the intro README here:
+-- https://github.com/ekmett/lens
+--
+-- and this tutorial:
+-- https://www.fpcomplete.com/school/to-infinity-and-beyond/pick-of-the-week/basic-lensing
+--
+-- Lenses are great for working with nested data structures, and writing
+-- functional code that looks imperative. Both are big plusses for game
+-- development.
+-- So this step is optional, but recommended.
+makeLenses ''Player
+makeLenses ''GameState
+
+-- Finally, you need to make both Player and GameState
+-- instances of Renderable. This defines how they will be shown on the
+-- screen.
+--
+-- The `render` function returns a Gloss Picture:
+--
+-- http://hackage.haskell.org/package/gloss-1.8.2.2/docs/Graphics-Gloss-Data-Picture.html
+
+instance Renderable Player where
+    render p = color blue $ box 50 50
+
+-- Here we are just rendering the player as a blue box. With ActionKid,
+-- you can also use an image from your computer instead:
+--
+-- > render p = image "images/player.png"
+
+-- To render the game state, we just render the player.
+-- To do that, use the `display` function. `display` will render
+-- the player at the right x and y coordinates.
 instance Renderable GameState where
-    render gs = displayAll (_tiles gs) <> display (_player gs)
+    render gs = display (_player gs)
 
-tileMap =
-    [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-     [1, 1, 1, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 1, 1, 1],
-     [1, 1, 1, 2, 1, 1, 1, 2, 2, 2, 1, 1, 1, 2, 1, 1, 1],
-     [1, 1, 1, 2, 1, 3, 1, 2, 13, 2, 1, 3, 1, 2, 1, 1, 1],
-     [1, 2, 2, 2, 2, 2, 10, 2, 12, 2, 10, 2, 2, 2, 2, 2, 1],
-     [1, 2, 1, 4, 1, 11, 1, 1, 1, 1, 1, 9, 1, 4, 1, 2, 1],
-     [1, 2, 1, 3, 1, 2, 7, 1, 14, 1, 5, 2, 1, 3, 1, 2, 1],
-     [1, 2, 2, 2, 2, 2, 3, 1, 1, 1, 3, 2, 2, 2, 2, 2, 1],
-     [1, 2, 1, 3, 1, 2, 7, 1, 1, 1, 5, 2, 1, 3, 1, 2, 1],
-     [1, 2, 1, 1, 1, 9, 1, 1, 3, 1, 1, 11, 1, 1, 1, 2, 1],
-     [1, 2, 2, 2, 2, 2, 2, 8, 2, 8, 2, 2, 2, 2, 2, 2, 1],
-     [1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1],
-     [1, 1, 1, 1, 1, 2, 1, 3, 2, 3, 1, 2, 1, 1, 1, 1, 1],
-     [1, 1, 1, 1, 1, 2, 1, 1, 2, 6, 1, 2, 1, 1, 1, 1, 1],
-     [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1],
-     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+-- If the game state has multiple items, you can render them all by
+-- concatenating them:
+--
+-- > render gs = display (_player1 gs) <> display (_player2 gs)
 
-boardW = length . head $ tileMap
-boardH = length tileMap
+-- this is the default game state. The player starts at coordinates (0,0)
+-- (the bottom left of the screen).
+-- NOTE: For the `Attributes` field, you can just use `def`. This will set
+-- the correct default attributes for an object.
+--
+-- So this creates the game state with a player in it. Both have default
+-- attributes.
+gameState = (GameState (Player def) def)
 
-playerCoords :: GameState -> (Int, Int)
-playerCoords gs = ((floor (p ^. x)) // tileSize, (((boardH * tileSize) - (floor (p ^. y))) // tileSize)-1)
-    where p = gs ^. player
-          ts = gs ^. tiles
+-- All of the core game logic takes place in this monad transformer stack.
+-- The State is the default game state we just made.
+type GameMonad a = StateT GameState IO a
 
-currentIdx :: GameState -> Int
-currentIdx gs = y_ * boardW + x_
-    where (x_,y_) = playerCoords gs
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+-- Ok, now we are done specifying all the data types and how they should
+-- look! Now it's time to implement the core game logic. There are two
+-- functions you need to define:
+--
+-- 1. An event handler (for key presses/mouse clicks)
+-- 2. A game loop.
+--
+-- The event handler listens for user input, and moves the player etc.
+-- The game loop is where the rest of the logic happens: firing bullets,
+-- hitting an enemy, animations etc etc.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
 
-currentTile gs = (_tiles gs) !! (currentIdx gs)
-leftTile gs    = (_tiles gs) !! (currentIdx gs - 1)
-rightTile gs   = (_tiles gs) !! (currentIdx gs + 1)
-upTile gs      = (_tiles gs) !! (currentIdx gs - boardW)
-downTile gs    = (_tiles gs) !! (currentIdx gs + boardW)
+-- This is the event handler. Since we are using lenses, this logic is
+-- really easy to write.
+eventHandler :: Event -> GameMonad ()
+eventHandler (EventKey (SpecialKey KeyLeft) Down _ _) = player.x -= 10
+eventHandler (EventKey (SpecialKey KeyRight) Down _ _) = player.x += 10
+eventHandler (EventKey (SpecialKey KeyUp) Down _ _) = player.y += 10
+eventHandler (EventKey (SpecialKey KeyDown) Down _ _) = player.y -= 10
+eventHandler _ = return ()
 
-renderedTiles = renderTileMap tileMap f (tileSize, tileSize)
-    where f 1  = Empty def
-          f 2  = Wall def
-          f 3  = Chip def
-          f 4  = KeyYellow def
-          f 5  = KeyRed def
-          f 6  = KeyGreen def
-          f 7  = KeyBlue def
-          f 8  = LockYellow def
-          f 9  = LockRed def
-          f 10 = LockGreen def
-          f 11 = LockBlue def
-          f 12 = Gate def
-          f 13 = GateFinal def
-          f 14 = Help def
+-- This is the main loop. It does nothing right now.
+mainLoop :: Float -> GameMonad ()
+mainLoop _ = return ()
 
-gameState = GameState renderedTiles (x .~ (8*tileSize) $ y .~ (8*tileSize) $ player_) 0 0 0 False def
-        where player_ = (Player DirDown def)
-
-main = do
-    playSound (soundDir ++ "chips01.wav") True
-    run "chips challenge" (9 * tileSize, 9 * tileSize) (x -~ (4*tileSize) $ y -~ (4*tileSize) $ gameState) on stepGame
-
-chipsLeft gs = length $ filter isChip (_tiles gs)
-  where isChip (Chip _) = True
-        isChip _        = False
-
-oof :: IO ()
-oof = playSound (soundDir ++ "oof.wav") False
-
-maybeMove :: (GameState -> Tile) -> GameState -> GameState -> IO GameState
-maybeMove func gs newGs =
-    case func gs of
-      Wall _ -> do
-        oof
-        return gs
-      LockRed _    -> if _redKeyCount gs > 0
-                        then return newGs
-                        else oof >> return gs
-      LockBlue _   -> if _blueKeyCount gs > 0
-                        then return newGs
-                        else oof >> return gs
-      LockGreen _  -> if _hasGreenKey gs
-                        then return newGs
-                        else oof >> return gs
-      LockYellow _ -> if _yellowKeyCount gs > 0
-                        then return newGs
-                        else oof >> return gs
-      Gate _       -> if chipsLeft gs == 0
-                        then return newGs
-                        else oof >> return gs
-      _ -> return newGs
-
--- on (EventKey (SpecialKey KeyLeft) Down _ _) gs = do
---       maybeMove leftTile gs $
---         player.direction .~ DirLeft
---         $ player.x -~ tileSize
---         $ x +~ tileSize
---         $ gs
-
--- on (EventKey (SpecialKey KeyRight) Down _ _) gs =
---       maybeMove rightTile gs $
---         player.direction .~ DirRight
---         $ player.x +~ tileSize
---         $ x -~ tileSize
---         $ gs
-
--- on (EventKey (SpecialKey KeyUp) Down _ _) gs =
---       maybeMove upTile gs $
---         player.direction .~ DirUp
---         $ player.y +~ tileSize
---         $ y -~ tileSize
---         $ gs
-
--- on (EventKey (SpecialKey KeyDown) Down _ _) gs =
---       maybeMove downTile gs $
---         player.direction .~ DirDown
---         $ player.y -~ tileSize
---         $ y +~ tileSize
---         $ gs
-
--- on (EventKey (SpecialKey KeySpace) Down _ _) gs = do
---     return gs
-
-on _ = player.direction .= DirDown
-
-stepGame _ = return ()
-    -- let playerIx = currentIdx gs
-    -- let attrs_ = ((gs ^. tiles) !! playerIx) ^. attrs
-    -- let resetTile i = tiles.(ix i) .~ (Empty attrs_) $ gs
-    -- case currentTile gs of
-    --   Chip _ -> do
-    --     playSound (soundDir ++ "collect_chip.wav") False
-    --     return $ resetTile playerIx
-    --   Gate _ -> return $ resetTile playerIx
-    --   KeyYellow _ -> return $ yellowKeyCount +~ 1 $ resetTile playerIx
-    --   KeyBlue _ -> return $ blueKeyCount +~ 1 $ resetTile playerIx
-    --   KeyGreen _ -> return $ hasGreenKey .~ True $ resetTile playerIx
-    --   KeyRed _ -> return $ redKeyCount +~ 1 $ resetTile playerIx
-    --   LockYellow _ -> do
-    --     playSound (soundDir ++ "door.wav") False
-    --     return $ yellowKeyCount -~ 1 $ resetTile playerIx
-    --   LockBlue _ -> do
-    --     playSound (soundDir ++ "door.wav") False
-    --     return $ blueKeyCount -~ 1 $ resetTile playerIx
-    --   LockGreen _ -> do
-    --     playSound (soundDir ++ "door.wav") False
-    --     return $ resetTile playerIx
-    --   LockRed _ -> do
-    --     playSound (soundDir ++ "door.wav") False
-    --     return $ redKeyCount -~ 1 $ resetTile playerIx
-    --   _ -> return gs
+-- Now lets run the game! The run function takes:
+-- 1. the title for the window of the game
+-- 2. the size of the window
+-- 3. the initial game state
+-- 4. the eventHandler function
+-- 5. the main loop function
+main = run "demo game" (500, 500) gameState eventHandler mainLoop
