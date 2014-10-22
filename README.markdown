@@ -2,10 +2,26 @@
 
 A game framework for Haskell.
 
-If you use this, you need:
+The goal is to have an easy-to-use game framework for Haskell. For example, here's how you get a player on the screen:
 
-1. mpg123 (and so do your users) so that you can play sound and
-2. to compile with -threaded, so that you can play sounds and show graphics simultaneously:
+```haskell
+-- create a new player data type
+data Player = Player { _pa :: Attributes }
+deriveMC ''Player
 
-    ghc-options: -rtsopts -threaded "-with-rtsopts=-M500m -N"
-  
+-- describe what it should look like:
+instance Renderable Player where
+    render p = image "images/player.png"
+```
+
+Here's how you move your player:
+
+```haskell
+handle (EventKey (SpecialKey KeyLeft) Down _ _)  = player.x -= 10
+handle (EventKey (SpecialKey KeyRight) Down _ _) = player.x += 10
+handle (EventKey (SpecialKey KeyUp) Down _ _)    = player.y += 10
+handle (EventKey (SpecialKey KeyDown) Down _ _)  = player.y -= 10
+```
+
+Check out the included example for more details.
+Read the documentation on Hackage.
