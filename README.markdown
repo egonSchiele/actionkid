@@ -1,5 +1,7 @@
 # ActionKid
 
+![](http://static.adit.io/chips_screenshot.png)
+
 A game framework for Haskell.
 
 The goal is to have an easy-to-use game framework for Haskell. For example, here's how you get a player on the screen:
@@ -32,5 +34,5 @@ If you are playing on OS X, please disable "automatic GPU switching from system 
 All the hard lifting in this package is done by [Gloss](https://hackage.haskell.org/package/gloss). ActionKid provides a lot of convenience functions.
 [gloss-game](https://github.com/mchakravarty/gloss-game) is a similar module.
 
-Check out the included example for more details.
+[Check out the included example for more details](https://github.com/egonSchiele/actionkid/blob/master/src/Main.hs).
 Read the documentation on Hackage.
