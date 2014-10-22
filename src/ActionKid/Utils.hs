@@ -3,6 +3,9 @@ import Data.List
 import Graphics.Gloss
 import Control.Monad.State
 
+-- | Convenience function to make a box:
+--
+-- > box 50 50
 box :: Int -> Int -> Picture
 box w_ h_ = polygon [p1, p2, p3, p4]
   where
@@ -31,4 +34,11 @@ mapWithIndex func list = map func (zip list (indices list))
 
 forWithIndex = flip mapWithIndex
 
-with state func = snd $ runState func state
+-- | convenient if you need to update a lot of attributes on a `MovieClip`.
+-- Example:
+--
+-- > withMC person $ do
+--     x .= 100
+--     y .= 100
+--     name .= "adit"
+withMC state func = snd $ runState func state

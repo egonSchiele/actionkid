@@ -28,10 +28,10 @@ import Control.Concurrent
 import Foreign.ForeignPtr
 import Graphics.Rendering.OpenGL.GL.StateVar
 
--- | Given a path to an audio file, plays the file.
--- Needs some love...either SDL is buggy or I don't understand it...
+-- | (Currently disabled) Given a path to an audio file, plays the file.
 playSound :: String -> Bool -> IO ()
 playSound src loopSound = return ()
+-- Needs some love...either SDL is buggy or I don't understand it...
 -- playSound src loopSound = do
 --   let audioRate     = 22050
 --       audioFormat   = Mix.AudioS16LSB
@@ -69,11 +69,7 @@ playSound src loopSound = return ()
 
 -- | Given a path, loads the image and returns it as a picture. It performs
 -- caching, so if the same path has been given before, it will just return
--- the image from the cache. This makes this function easily usable in
--- `render`...you don't have to worry about the image getting loaded into
--- memory multiple times. By my testing, this actually worked, and memory
--- didn't increase. Before the caching, it WAS reading images into memory
--- multiple times...leading to massive memory use.
+-- the image from the cache.
 image :: String -> Picture
 image src = unsafePerformIO $ do
     pic_ <- loadJuicy src
@@ -112,26 +108,17 @@ image src = unsafePerformIO $ do
 -- a 32x32 image. 32x32 = 1024).
 
 
--- | Here's the kind of thing this renders. Suppse you have a data type
--- like so:
+-- | Convenience function to make `MovieClip` instances for your data types.
+-- Suppose you have a data type like so:
 --
 -- > data Tile = Empty { _ea :: Attributes } | Wall  { _wa :: Attributes } | Chip  { _ca :: Attributes }
 --
--- This will generate:
+-- Just call:
 --
--- > instance MovieClip Tile where
---       attrs = lens viewer mutator
---         where viewer (Empty a) = a
---               viewer (Wall  a) = a
---               viewer (Chip  a) = a
---               mutator mc new = case mc of
---                                  Empty _ -> Empty new
---                                  Wall  _ -> Wall  new
---                                  Chip  _ -> Chip  new
+-- > deriveMC ''Tile
 --
--- The `viewer` function allows you to access attributes. The `mutator`
--- function allows you to update the attributes. These are used by the
--- MovieClip class so you can write stuff like `player ^. x` or `player.x +~ 10`
+-- Or you can write your instance by hand if you want. Something like this:
+-- https:\/\/gist.github.com\/egonSchiele\/e692421048cbd79acb26
 deriveMC :: Name -> Q [Dec]
 deriveMC name = do
     TyConI (DataD _ _ _ records _) <- reify name
@@ -180,19 +167,23 @@ mkMutatorMatch mc new (NormalC n fields) = Match (ConP n (take (length fields) $
 -- grid of tiles. Takes:
 --
 -- 1. A 2d array of ints
--- 2. A function that takes an int and returns the related movieclip.
--- 3. (width, height) for the tiles
+--
+-- 2. A function that takes an int and returns the related `MovieClip`
+--
+-- 3. (width, height) for the tiles in pixels
 renderTileMap :: MovieClip a => [[Int]] -> (Int -> a) -> (Int, Int) -> [a]
 renderTileMap tileMap f (w,h) =
     concat $ forWithIndex tileMap $ \(row, j) ->
          forWithIndex row $ \(tile, i) ->
-            with (f tile) $ do
+            withMC (f tile) $ do
               x .= (fromIntegral $ i*w)
               y .= (fromIntegral $ boardH - h - j*h)
 
     where boardH = (*h) . length $ tileMap
 
--- | hittest. Check if one MovieClip is hitting another.
+-- | Check if one `MovieClip` is hitting another. Example:
+--
+-- > when player `hits` enemy $ die
 hits :: Renderable a => a -> a -> Bool
 hits a b = f a `intersects` f b
     where f = boundingBox . display
@@ -201,13 +192,13 @@ hits a b = f a `intersects` f b
 --
 -- 1. Window title
 --
--- 2. (width, height)
+-- 2. (width, height) of window
 --
--- 3. Game state (a MovieClip)
+-- 3. Game state (a `MovieClip`)
 --
--- 4. a key handler function
+-- 4. an event handler function (for handling user input)
 --
--- 5. a step function (onEnterFrame)
+-- 5. a function that keeps getting called in a loop (the main game loop)
 run :: (MovieClip a, Renderable a) => String -> (Int, Int) -> a -> (Event -> StateT a IO ()) -> (Float -> StateT a IO ()) -> IO ()
 run title (w,h) state keyHandler stepFunc = do
   boardWidth $= w

@@ -1,14 +1,14 @@
 name:                ActionKid
 version:             0.1.0.0
--- synopsis:
--- description:
+synopsis:            An easy-to-use video game framework for Haskell.
+description:         See examples and full readme on the Github page: https:\/\/github.com\/egonSchiele\/actionkid
 homepage:            http://adit.io
 license:             BSD3
 license-file:        LICENSE
 author:              Aditya Bhargava
 maintainer:          bluemangroupie@gmail.com
 -- copyright:
--- category:
+category:            Game Engine
 build-type:          Simple
 cabal-version:       >=1.8
 
