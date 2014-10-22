@@ -23,5 +23,10 @@ handle (EventKey (SpecialKey KeyUp) Down _ _)    = player.y += 10
 handle (EventKey (SpecialKey KeyDown) Down _ _)  = player.y -= 10
 ```
 
+## Similar modules
+
+All the hard lifting in this package is done by [Gloss](https://hackage.haskell.org/package/gloss). ActionKid provides a lot of convenience functions.
+[gloss-game](https://github.com/mchakravarty/gloss-game) is a similar module.
+
 Check out the included example for more details.
 Read the documentation on Hackage.
