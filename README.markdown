@@ -23,6 +23,10 @@ handle (EventKey (SpecialKey KeyUp) Down _ _)    = player.y += 10
 handle (EventKey (SpecialKey KeyDown) Down _ _)  = player.y -= 10
 ```
 
+## On OS X
+
+If you are playing on OS X, please disable "automatic GPU switching from system preferences -> energy saver first. Without this, the game may appear frozen.
+
 ## Similar modules
 
 All the hard lifting in this package is done by [Gloss](https://hackage.haskell.org/package/gloss). ActionKid provides a lot of convenience functions.
