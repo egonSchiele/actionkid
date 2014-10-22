@@ -13,7 +13,7 @@ build-type:          Simple
 cabal-version:       >=1.8
 
 executable actionkid
-  build-depends:       base ==4.6.*, gloss, StateVar, lens, gloss-juicy, mtl, template-haskell, JuicyPixels ==3.1.*, JuicyPixels-repa ==0.7, repa ==3.2.3.3, vector ==0.10.0.1, containers ==0.5.0.*, process, unix ==2.6.0.1, GLUT ==2.4.0.*, OpenGL ==2.8.0.*
+  build-depends:       base ==4.6.*, gloss, StateVar, lens, gloss-juicy, mtl, template-haskell, JuicyPixels ==3.1.*, JuicyPixels-repa ==0.7, containers ==0.5.0.*, OpenGL ==2.8.0.*
   hs-source-dirs:      src
   main-is: Main.hs
   ghc-options: -rtsopts -threaded "-with-rtsopts=-M500m -N"
@@ -25,8 +25,8 @@ Test-Suite test-actionkid
   main-is:             Main.hs
 
 library
-  build-depends:       base ==4.6.*, gloss, StateVar, lens, gloss-juicy, mtl, template-haskell, JuicyPixels ==3.1.*, JuicyPixels-repa ==0.7, repa ==3.2.3.3, vector ==0.10.0.1, containers ==0.5.0.*, SDL, SDL-mixer, process, unix ==2.6.0.1, GLUT ==2.4.0.*, OpenGL ==2.8.0.*
-  exposed-modules:     ActionKid, ActionKid.Types, ActionKid.Core
+  build-depends:       base ==4.6.*, gloss, StateVar, lens, gloss-juicy, mtl, template-haskell, JuicyPixels ==3.1.*, JuicyPixels-repa ==0.7, containers ==0.5.0.*, OpenGL ==2.8.0.*
+  exposed-modules:     ActionKid, ActionKid.Types, ActionKid.Core, ActionKid.Utils
   hs-source-dirs:      src
-  Other-modules:       ActionKid.Utils, ActionKid.Internal, ActionKid.Globals
+  Other-modules:       ActionKid.Internal, ActionKid.Globals
   ghc-options: -rtsopts -threaded "-with-rtsopts=-M500m -N"

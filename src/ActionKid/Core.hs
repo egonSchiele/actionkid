@@ -26,7 +26,6 @@ import Control.Monad
 import Control.Monad.Fix
 import Control.Concurrent
 import Foreign.ForeignPtr
-import System.Cmd
 import Graphics.Rendering.OpenGL.GL.StateVar
 
 -- | Given a path to an audio file, plays the file.
