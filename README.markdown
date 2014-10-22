@@ -37,4 +37,4 @@ If you are playing on OS X, please disable "automatic GPU switching from system 
 ## Docs
 
 - [Check out the included example for more details](https://github.com/egonSchiele/actionkid/blob/master/src/Main.hs).
-- Read the documentation on Hackage.
+- [Read the documentation on Hackage](https://hackage.haskell.org/package/ActionKid).
