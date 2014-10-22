@@ -6,7 +6,8 @@ import Control.Lens
 import Control.Monad.State
 
 -- This is an example of how to use ActionKid to make games with Haskell.
--- ActionKid is inspired by Actionscript, so you will see some differences.
+-- ActionKid is inspired by Actionscript, so you will see some
+-- similarities.
 --
 -- Every video game has some objects on the screen that interact with each
 -- other. For example, in a game of Mario, you will have Mario himself,
