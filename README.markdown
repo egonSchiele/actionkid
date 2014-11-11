@@ -4,6 +4,8 @@
 
 A game framework for Haskell.
 
+**Video tutorial**: http://vimeo.com/109663514
+
 The goal is to have an easy-to-use game framework for Haskell. For example, here's how you get a player on the screen:
 
 ```haskell
