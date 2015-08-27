@@ -1,32 +1,32 @@
-{-# LANGUAGE TemplateHaskell, FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module ActionKid.Core where
-import ActionKid.Types
-import ActionKid.Utils
-import Control.Applicative
-import Control.Monad
-import Data.List
-import Data.Maybe
-import Text.Printf
-import Graphics.Gloss hiding (display)
-import Data.Monoid ((<>), mconcat)
-import Graphics.Gloss.Interface.IO.Game
-import Data.Ord
-import ActionKid.Globals
-import Control.Lens
-import qualified Debug.Trace as D
-import ActionKid.Internal
-import Control.Monad.State
-import Language.Haskell.TH
-import Data.IORef
-import qualified Data.Map as M
-import System.IO.Unsafe
-import Graphics.Gloss.Juicy
-import Control.Monad
-import Control.Monad.Fix
-import Control.Concurrent
-import Foreign.ForeignPtr
-import Graphics.Rendering.OpenGL.GL.StateVar
+import           ActionKid.Globals
+import           ActionKid.Internal
+import           ActionKid.Types
+import           ActionKid.Utils
+import           Control.Applicative
+import           Control.Concurrent
+import           Control.Lens
+import           Control.Monad
+import           Control.Monad
+import           Control.Monad.Fix
+import           Control.Monad.State
+import           Data.IORef
+import           Data.List
+import qualified Data.Map                         as M
+import           Data.Maybe
+import           Data.Monoid                      (mconcat, (<>))
+import           Data.Ord
+import qualified Debug.Trace                      as D
+import           Foreign.ForeignPtr
+import           Graphics.Gloss                   hiding (display)
+import           Graphics.Gloss.Interface.IO.Game
+import           Graphics.Gloss.Juicy
+import           Language.Haskell.TH
+import           System.IO.Unsafe
+import           Text.Printf
 
 -- | (Currently disabled) Given a path to an audio file, plays the file.
 playSound :: String -> Bool -> IO ()
@@ -201,8 +201,8 @@ hits a b = f a `intersects` f b
 -- 5. a function that keeps getting called in a loop (the main game loop)
 run :: (MovieClip a, Renderable a) => String -> (Int, Int) -> a -> (Event -> StateT a IO ()) -> (Float -> StateT a IO ()) -> IO ()
 run title (w,h) state keyHandler stepFunc = do
-  boardWidth $= w
-  boardHeight $= h
+  let boardWidth =  setRef w
+  let boardHeight = setRef h
   playIO
     (InWindow title (w,h) (1, 1))
     white
